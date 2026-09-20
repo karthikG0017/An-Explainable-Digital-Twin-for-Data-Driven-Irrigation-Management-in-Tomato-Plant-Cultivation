@@ -12,9 +12,12 @@ What this script produces
      2 label=1, 1 borderline), prints each feature's SHAP contribution with
      a plain-English interpretation: "This reading's moisture of X% pushed
      the irrigation probability UP/DOWN by Y points."
-  3. Real-world validation — runs the same SHAP explanation on the Mendeley
-     JSON pump-ON rows (real irrigation events), confirming the model's
-     reasoning matches the real sensor deployment's behaviour.
+  3. Real-world threshold comparison — runs the same SHAP explanation on the
+     Mendeley JSON pump-ON rows. NOTE: this is NOT a standard accuracy check
+     against a shared ground truth. Our model uses a 70% moisture threshold;
+     the real deployment triggers at ~50%. These are two different irrigation
+     policies. Whether 70% vs 50% is better for water efficiency and yield is
+     an open question our A/B field experiment will answer.
   4. Saves SHAP values to models/shap_values_test.pkl for use in the
      Flask API (item 7) and frontend (item 8).
 
@@ -204,6 +207,13 @@ def print_per_prediction(
     print()
     print("  NOTE: SHAP values are in log-odds space. A positive SHAP value")
     print("  pushes the prediction toward irrigation_needed=1 (higher probability).")
+    print()
+    print("  NOTE on feature interactions (e.g. humidity direction flipping):")
+    print("  SHAP may show humidity pushing the prediction in opposite directions")
+    print("  across examples. This confirms SHAP correctly recovered the ET physics")
+    print("  relationships the simulator was coded to produce. It does NOT")
+    print("  independently validate real-world tomato physiology — that requires")
+    print("  multi-factor field data not yet collected.")
     print("=" * 62)
 
 
@@ -215,10 +225,14 @@ def print_realworld_validation(
 ) -> None:
     print()
     print("=" * 62)
-    print("  SECTION 3 — Real-World Validation (Mendeley JSON, pump-ON rows)")
+    print("  SECTION 3 — Threshold Policy Comparison (Mendeley JSON)")
     print("=" * 62)
-    print("  Confirms: does the model correctly predict irrigation_needed=1")
-    print("  for the 14 rows where the REAL pump actually activated?")
+    print("  IMPORTANT: This is NOT a standard accuracy evaluation.")
+    print("  Our model uses a 70% moisture threshold; the Mendeley deployment")
+    print("  triggered at ~50%. These are two DIFFERENT irrigation policies.")
+    print("  All real pump-ON events (at 38-50%) also exceed our 70% threshold,")
+    print("  so our model would have triggered earlier. Whether earlier is better")
+    print("  or worse (yield vs water use) is what the A/B experiment tests.")
     print()
 
     if not os.path.exists(MENDELEY_JSON):
@@ -252,13 +266,16 @@ def print_realworld_validation(
     preds_off = model.predict(X_off)
     correct_off = sum(1 for p in preds_off if p == 0)
 
-    print(f"  Pump-ON rows (real irrigation events): {len(pump_on_rows)}")
-    print(f"    IsolationForest flagged as anomaly : {anomaly_on}")
-    print(f"    Model predicted irrigation_needed=1: {correct}/{len(pump_on_rows)}")
-    print(f"    Model accuracy on pump-ON rows     : {correct/len(pump_on_rows)*100:.0f}%")
+    print(f"  Pump-ON rows (motorValue=1, moisture 38-50%): {len(pump_on_rows)}")
+    print(f"    IsolationForest flagged as anomaly        : {anomaly_on}")
+    print(f"    Our model (70% policy) predicts label=1   : {correct}/{len(pump_on_rows)}")
+    print(f"    [Expected: all pump-ON rows are below 70%, so our earlier policy fires]")
     print()
-    print(f"  Pump-OFF sample (10 rows, no irrigation): ")
-    print(f"    Model predicted irrigation_needed=0: {correct_off}/10")
+    print(f"  Pump-OFF sample (motorValue=0, moisture 51-67%): 10 rows")
+    print(f"    Our model (70% policy) predicts label=1   : {10 - correct_off}/10")
+    print(f"    [Expected: 51-67% is below our 70% trigger; real system had not fired")
+    print(f"     yet at 50%. This is a POLICY difference, not a model error.")
+    print(f"     A/B experiment will quantify the water-use vs yield tradeoff.]")
     print()
 
     # SHAP for pump-ON rows
