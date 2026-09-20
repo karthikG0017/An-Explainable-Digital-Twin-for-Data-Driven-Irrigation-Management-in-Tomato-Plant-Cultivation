@@ -26,13 +26,15 @@ The API never duplicates any model logic — it only:
   3. Computes SHAP values for sensor readings (fast, per-request)
   4. Serialises FusionResult to JSON
 
-SHAP vs LIME
-============
-SHAP (sensor): computed per-request using TreeExplainer — fast (<10ms).
-LIME (image) : NOT computed per-request — too slow (minutes per image).
-               The `image_explanation` field is returned as {} unless the
-               client explicitly requests LIME via a separate endpoint
-               (not in scope for item 6).
+SHAP vs LIME vs Grad-CAM
+========================
+SHAP (sensor)  : computed per-request via TreeExplainer — ~5ms.
+Grad-CAM (image): computed per-request via single backward pass — 53ms ±2ms.
+                  Returns a base64 PNG heatmap overlay in `image_explanation`.
+                  Benchmark (your CPU): LIME-1000=15.86s, LIME-300=4.44s (IoU=0.70±0.24),
+                  LIME-100=1.49s (IoU=0.50±0.13), Grad-CAM=71ms total. Grad-CAM chosen.
+LIME (offline) : 1000-sample LIME used in evaluation chapter (already computed).
+                 Not run per-request — too slow and unstable at reduced sample counts.
 """
 
 from __future__ import annotations
@@ -56,6 +58,7 @@ sys.path.insert(0, _ROOT)
 
 from models.fusion import fuse, FusionResult, _get_bundle   # noqa: E402
 import backend.image_inference as img_inf                    # noqa: E402
+import backend.gradcam_inference as gradcam_inf              # noqa: E402
 
 # ── App setup ─────────────────────────────────────────────────────────────────
 app = Flask(__name__)
@@ -376,14 +379,19 @@ def predict_full():
         "icar_source":          string | null
       },
       "sensor_explanation": { ... },      // SHAP values (same as sensor-only)
-      "image_explanation":  {}            // LIME not computed per-request (see note)
+      "image_explanation": {
+        "method":          "gradcam",
+        "predicted_class": string,         // top-1 class from Grad-CAM pass
+        "confidence":      float,
+        "heatmap_b64":     string,         // base64 PNG — embed as data:image/png;base64,...
+        "target_layer":    string,         // "features[-1] (EfficientNetB0 last MBConv block, 7x7)"
+        "note":            string          // methodological note for UI display
+      }
 
-    NOTE on image_explanation
-    -------------------------
-    LIME explanations take ~60-120s per image. They are NOT computed here.
-    The field is returned as {} so the frontend can render the prediction
-    immediately. A separate endpoint (POST /api/explain/lime) can be added
-    in a future iteration to request LIME asynchronously.
+    Grad-CAM is computed per-request via a single backward pass (~53ms).
+    Benchmark on this machine: LIME-1000=15.86s, LIME-300=4.44s (IoU=0.70+-0.24
+    vs 1000-sample reference), Grad-CAM=71ms total. Grad-CAM chosen for live API.
+    1000-sample LIME outputs are available as static assets from the evaluation chapter.
 
     Error — 400 Bad Request
     -----------------------
@@ -414,11 +422,18 @@ def predict_full():
     except Exception:
         abort(400, "Image file is not a valid image (corrupt or unsupported format).")
 
-    # ── Run image inference ───────────────────────────────────────────────────
+    # ── Run image inference (softmax probabilities) ───────────────────────────
     try:
         image_probs = img_inf.predict(pil_image)
     except Exception as e:
         abort(500, f"Image model inference failed: {e}")
+
+    # ── Run Grad-CAM (~53ms) ──────────────────────────────────────────────────
+    try:
+        gradcam_result = gradcam_inf.explain(pil_image)
+    except Exception as e:
+        # Non-fatal: explanation failure should not block the prediction
+        gradcam_result = {"method": "gradcam", "error": str(e)}
 
     # ── SHAP for sensor ───────────────────────────────────────────────────────
     shap_vals = _compute_shap(moisture, temp, hum)
@@ -430,9 +445,10 @@ def predict_full():
         humidity_pct       = hum,
         image_probs        = image_probs,
         sensor_shap_values = shap_vals,
+        image_lime_mask    = gradcam_result,   # stored in result.image_explanation
     )
 
-    return jsonify(asdict(result))
+    return jsonify(_to_native(asdict(result)))
 
 
 # ════════════════════════════════════════════════════════════════════════════════
