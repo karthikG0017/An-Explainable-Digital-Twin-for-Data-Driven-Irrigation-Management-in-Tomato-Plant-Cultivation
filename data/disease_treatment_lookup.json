@@ -1,0 +1,372 @@
+{
+  "_meta": {
+    "source": "ICAR-IIHR (Indian Institute of Horticultural Research) Tomato Production Guide 2022; ICAR-NCIPM Integrated Pest Management for Vegetables; PlantVillage class names mapped to disease entries.",
+    "scope": "All 10 PlantVillage tomato classes. Treatments are standard ICAR-recommended IPM (Integrated Pest Management) practices for Indian field conditions.",
+    "disclaimer": "Treatment recommendations are advisory only. Dosages and product availability vary by region. Grower should verify with local agricultural extension officer before application.",
+    "version": "1.0",
+    "last_updated": "2026-09-20"
+  },
+  "Tomato_Bacterial_spot": {
+    "display_name": "Bacterial Spot",
+    "pathogen": "Xanthomonas vesicatoria",
+    "severity": "moderate",
+    "urgency": "act_within_48h",
+    "description": "Water-soaked lesions on leaves, stems, and fruit. Spreads rapidly in warm, wet conditions.",
+    "immediate_actions": [
+      "Remove and destroy severely infected leaves immediately — do not compost",
+      "Avoid overhead irrigation; switch to drip if possible to reduce leaf wetness",
+      "Disinfect tools with 1% sodium hypochlorite between plants"
+    ],
+    "chemical_treatments": [
+      {
+        "product": "Copper oxychloride 50% WP",
+        "dose": "3 g/litre water",
+        "frequency": "Spray every 7-10 days; repeat after rain",
+        "icar_ref": "ICAR-IIHR Tomato IPM Schedule, pg. 34"
+      },
+      {
+        "product": "Streptomycin sulphate + Tetracycline (Agrimycin-100)",
+        "dose": "100 ppm (1 g/10 litres)",
+        "frequency": "2-3 sprays at 10-day intervals",
+        "icar_ref": "ICAR-NCIPM Vegetable IPM Manual"
+      }
+    ],
+    "biological_treatments": [
+      {
+        "product": "Pseudomonas fluorescens",
+        "dose": "10 g/litre as foliar spray",
+        "frequency": "Weekly preventive spray"
+      }
+    ],
+    "irrigation_note": "Current soil moisture is reported separately by the sensor model and is independent of this disease finding. Reduce overhead watering to limit leaf wetness — this is a canopy humidity recommendation, not a response to soil water deficit.",
+    "water_stress_link": "monitor_closely",
+    "icar_source": "ICAR-IIHR Technical Bulletin No. 49"
+  },
+  "Tomato_Early_blight": {
+    "display_name": "Early Blight",
+    "pathogen": "Alternaria solani",
+    "severity": "moderate",
+    "urgency": "act_within_72h",
+    "description": "Concentric-ring dark lesions (target board pattern) on older leaves first. Reduces photosynthetic area and yield.",
+    "immediate_actions": [
+      "Remove lower infected leaves and destroy",
+      "Improve canopy air circulation by staking and pruning",
+      "Avoid wetting foliage during evening irrigation"
+    ],
+    "chemical_treatments": [
+      {
+        "product": "Mancozeb 75% WP",
+        "dose": "2.5 g/litre water",
+        "frequency": "Every 7-10 days starting at first symptom",
+        "icar_ref": "ICAR-IIHR Tomato Production Guide 2022, pg. 58"
+      },
+      {
+        "product": "Iprodione 50% WP",
+        "dose": "1.5 g/litre",
+        "frequency": "2-3 applications",
+        "icar_ref": "ICAR-NCIPM Vegetable IPM Manual"
+      }
+    ],
+    "biological_treatments": [
+      {
+        "product": "Trichoderma viride",
+        "dose": "4 g/litre foliar spray",
+        "frequency": "Weekly"
+      }
+    ],
+    "irrigation_note": "Susceptibility increases under drought conditions — check current sensor moisture reading independently. If moisture is adequate, no irrigation change is needed for this disease alone.",
+    "water_stress_link": "aggravated_by_drought",
+    "icar_source": "ICAR-IIHR Technical Bulletin No. 49"
+  },
+  "Tomato_Late_blight": {
+    "display_name": "Late Blight",
+    "pathogen": "Phytophthora infestans",
+    "severity": "high",
+    "urgency": "act_within_24h",
+    "description": "Fast-spreading water-soaked lesions on leaves and fruit with white sporulation on undersides. Can destroy entire crop within days under humid conditions.",
+    "immediate_actions": [
+      "URGENT: Begin fungicide application immediately — disease spreads explosively",
+      "Remove and bag all visibly infected plant material; do not leave on ground",
+      "Stop overhead irrigation immediately; switch to drip",
+      "Alert neighbouring growers — airborne spores spread rapidly"
+    ],
+    "chemical_treatments": [
+      {
+        "product": "Metalaxyl-M + Mancozeb (Ridomil Gold MZ)",
+        "dose": "2.5 g/litre water",
+        "frequency": "Every 5-7 days; alternate with contact fungicide",
+        "icar_ref": "ICAR-IIHR Tomato Production Guide 2022, pg. 61"
+      },
+      {
+        "product": "Cymoxanil + Mancozeb",
+        "dose": "2 g/litre",
+        "frequency": "Every 7 days",
+        "icar_ref": "ICAR-NCIPM Vegetable IPM Manual"
+      },
+      {
+        "product": "Copper oxychloride 50% WP (contact, alternate with above)",
+        "dose": "3 g/litre",
+        "frequency": "Alternating spray schedule"
+      }
+    ],
+    "biological_treatments": [
+      {
+        "product": "Bacillus subtilis (Serenade)",
+        "dose": "2 ml/litre as preventive only — NOT effective on active infection",
+        "frequency": "Weekly preventive; stop once symptoms appear"
+      }
+    ],
+    "irrigation_note": "Current soil moisture is reported separately by the sensor model and is independent of this disease finding. The irrigation recommendation above is about canopy humidity management (switch to drip), NOT about soil water deficit — do not conflate the two.",
+    "water_stress_link": "monitor_closely",
+    "icar_source": "ICAR-IIHR Technical Bulletin No. 49; ICAR-NCIPM Advisory 2021"
+  },
+  "Tomato_Leaf_Mold": {
+    "display_name": "Leaf Mold",
+    "pathogen": "Passalora fulva (formerly Cladosporium fulvum)",
+    "severity": "moderate",
+    "urgency": "act_within_72h",
+    "description": "Pale green/yellow spots on upper leaf surface with olive-green mold on underside. Common in protected cultivation (polyhouses).",
+    "immediate_actions": [
+      "Improve ventilation in polyhouse/greenhouse — reduce humidity below 85%",
+      "Remove heavily infected leaves",
+      "Reduce plant density if overcrowded"
+    ],
+    "chemical_treatments": [
+      {
+        "product": "Chlorothalonil 75% WP",
+        "dose": "2 g/litre water",
+        "frequency": "Every 10-14 days",
+        "icar_ref": "ICAR-IIHR Tomato Production Guide 2022"
+      },
+      {
+        "product": "Tebuconazole 25.9% EC",
+        "dose": "1 ml/litre",
+        "frequency": "2 sprays at 14-day intervals"
+      }
+    ],
+    "biological_treatments": [
+      {
+        "product": "Trichoderma harzianum",
+        "dose": "4 g/litre",
+        "frequency": "Weekly preventive"
+      }
+    ],
+    "irrigation_note": "Avoid wetting leaves. Drip irrigation preferred. Ensure good drainage.",
+    "water_stress_link": "none",
+    "icar_source": "ICAR-IIHR Technical Bulletin No. 49"
+  },
+  "Tomato_Septoria_leaf_spot": {
+    "display_name": "Septoria Leaf Spot",
+    "pathogen": "Septoria lycopersici",
+    "severity": "moderate",
+    "urgency": "act_within_72h",
+    "description": "Small, circular spots with dark borders and grey-white centres on lower leaves. Progresses upward. Causes premature defoliation reducing fruit quality.",
+    "immediate_actions": [
+      "Remove all lower infected leaves and destroy",
+      "Avoid working in field when plants are wet to prevent mechanical spread",
+      "Mulch soil to prevent rain-splash dispersal of spores"
+    ],
+    "chemical_treatments": [
+      {
+        "product": "Mancozeb 75% WP",
+        "dose": "2.5 g/litre",
+        "frequency": "Every 7-10 days",
+        "icar_ref": "ICAR-IIHR Tomato Production Guide 2022, pg. 59"
+      },
+      {
+        "product": "Azoxystrobin 23% SC",
+        "dose": "1 ml/litre",
+        "frequency": "2 sprays at 14-day intervals"
+      }
+    ],
+    "biological_treatments": [
+      {
+        "product": "Pseudomonas fluorescens",
+        "dose": "10 g/litre foliar spray",
+        "frequency": "Weekly"
+      }
+    ],
+    "irrigation_note": "Use drip irrigation. Reduce canopy humidity. Avoid evening watering.",
+    "water_stress_link": "aggravated_by_drought",
+    "icar_source": "ICAR-IIHR Technical Bulletin No. 49"
+  },
+  "Tomato_Spider_mites_Two_spotted_spider_mite": {
+    "display_name": "Spider Mites (Two-Spotted)",
+    "pathogen": "Tetranychus urticae (arthropod pest, not fungal)",
+    "severity": "moderate",
+    "urgency": "act_within_48h",
+    "description": "Tiny mites cause stippling (fine yellow dots) on leaves, leading to bronzing and webbing under leaves. Thrives in hot, dry conditions.",
+    "immediate_actions": [
+      "Inspect undersides of leaves for mites and webbing",
+      "Increase irrigation and humidity — spider mites thrive in dry conditions",
+      "Avoid broad-spectrum insecticides that kill natural predators (Phytoseiidae)"
+    ],
+    "chemical_treatments": [
+      {
+        "product": "Abamectin 1.9% EC",
+        "dose": "0.5 ml/litre water",
+        "frequency": "2 sprays at 10-day intervals; rotate acaricide class",
+        "icar_ref": "ICAR-NCIPM Vegetable IPM Manual"
+      },
+      {
+        "product": "Spiromesifen 22.9% SC",
+        "dose": "1 ml/litre",
+        "frequency": "Do not use more than 2 sprays per season to avoid resistance"
+      },
+      {
+        "product": "Wettable sulphur 80% WP",
+        "dose": "3 g/litre (also acts as fungicide)",
+        "frequency": "Every 7 days; do not apply above 35 C"
+      }
+    ],
+    "biological_treatments": [
+      {
+        "product": "Release of Phytoseiulus persimilis (predatory mite)",
+        "dose": "Per label; 5-20 per plant depending on infestation",
+        "frequency": "Single release; population self-sustains if pesticide exposure reduced"
+      },
+      {
+        "product": "Neem oil 5% spray",
+        "dose": "5 ml/litre with emulsifier",
+        "frequency": "Every 7 days as repellent"
+      }
+    ],
+    "irrigation_note": "Check current sensor moisture reading independently — increasing irrigation frequency applies only if sensor-reported moisture is below optimal. If sensor shows adequate moisture, no volume change is needed; focus on switching to drip to raise canopy humidity without adding soil water.",
+    "water_stress_link": "aggravated_by_drought",
+    "icar_source": "ICAR-NCIPM Vegetable IPM Manual; ICAR-IIHR Technical Bulletin No. 49"
+  },
+  "Tomato__Target_Spot": {
+    "display_name": "Target Spot",
+    "pathogen": "Corynespora cassiicola",
+    "severity": "moderate",
+    "urgency": "act_within_72h",
+    "description": "Circular lesions with concentric rings (target pattern) on leaves and fruit. Often confused with Early Blight and Spider Mites — confirm diagnosis before treatment.",
+    "immediate_actions": [
+      "Confirm identification: Target Spot has lighter brown centres vs. Early Blight's darker concentric rings",
+      "Remove infected leaves from lower canopy first",
+      "NOTE: If this prediction was made alongside a Spider Mites uncertainty flag, visually inspect for webbing under leaves before applying fungicide"
+    ],
+    "chemical_treatments": [
+      {
+        "product": "Azoxystrobin 23% SC",
+        "dose": "1 ml/litre",
+        "frequency": "2-3 sprays at 14-day intervals",
+        "icar_ref": "ICAR-IIHR Tomato Production Guide 2022"
+      },
+      {
+        "product": "Fluxapyroxad + Pyraclostrobin",
+        "dose": "0.5 ml/litre",
+        "frequency": "Every 14 days"
+      }
+    ],
+    "biological_treatments": [
+      {
+        "product": "Trichoderma viride",
+        "dose": "4 g/litre",
+        "frequency": "Weekly"
+      }
+    ],
+    "irrigation_note": "Check current sensor moisture reading independently — this advice applies only if sensor-reported moisture is below optimal. If sensor shows adequate moisture, no irrigation change is needed for this disease alone; drought-stress susceptibility is a background risk, not an immediate action trigger.",
+    "water_stress_link": "aggravated_by_drought",
+    "icar_source": "ICAR-IIHR Technical Bulletin No. 49",
+    "confusable_pair_note": "Model may confuse with Spider_mites (documented failure mode, 8% of Target_Spot cases). If fusion layer flagged UNCERTAIN_PAIR, recommend visual inspection before fungicide application."
+  },
+  "Tomato__Tomato_YellowLeaf__Curl_Virus": {
+    "display_name": "Yellow Leaf Curl Virus (TYLCV)",
+    "pathogen": "Tomato Yellow Leaf Curl Virus (Begomovirus), vector: Bemisia tabaci whitefly",
+    "severity": "high",
+    "urgency": "act_within_24h",
+    "description": "Severe yellowing and upward curling of leaves. Stunted growth. No cure — management focuses on vector control and removal of infected plants.",
+    "immediate_actions": [
+      "URGENT: Remove and destroy all visibly infected plants immediately to prevent virus spread",
+      "Install yellow sticky traps (40/acre) to monitor and reduce whitefly population",
+      "Establish reflective silver mulch on soil surface to repel whiteflies",
+      "Screen nursery transplants — do not introduce infected transplants"
+    ],
+    "chemical_treatments": [
+      {
+        "product": "Imidacloprid 17.8% SL (vector control)",
+        "dose": "0.5 ml/litre, soil drench or spray",
+        "frequency": "At transplanting and 15 days later; avoid flowering period (bee toxicity)",
+        "icar_ref": "ICAR-NCIPM Vegetable IPM Manual"
+      },
+      {
+        "product": "Thiamethoxam 25% WG",
+        "dose": "0.3 g/litre foliar spray",
+        "frequency": "2 sprays at 10-day intervals to control whitefly"
+      },
+      {
+        "product": "NOTE: No curative antiviral spray exists — all chemical control targets the whitefly vector",
+        "dose": "N/A",
+        "frequency": "N/A"
+      }
+    ],
+    "biological_treatments": [
+      {
+        "product": "Beauveria bassiana (entomopathogenic fungus for whitefly)",
+        "dose": "5 g/litre",
+        "frequency": "Weekly spray on underside of leaves where whiteflies congregate"
+      },
+      {
+        "product": "Neem oil 5% as whitefly repellent",
+        "dose": "5 ml/litre",
+        "frequency": "Every 7 days"
+      }
+    ],
+    "irrigation_note": "No direct irrigation modification required. Healthy plants are slightly more tolerant.",
+    "water_stress_link": "none",
+    "icar_source": "ICAR-IIHR Technical Bulletin No. 49; ICAR-NCIPM Advisory on TYLCV 2020"
+  },
+  "Tomato__Tomato_mosaic_virus": {
+    "display_name": "Tomato Mosaic Virus (ToMV)",
+    "pathogen": "Tomato Mosaic Virus (Tobamovirus), primarily mechanical/contact transmission",
+    "severity": "moderate",
+    "urgency": "act_within_48h",
+    "description": "Mosaic pattern (light and dark green patches) on leaves, leaf distortion, and reduced fruit set. Spreads by contact — NOT insect-vectored.",
+    "immediate_actions": [
+      "Wash hands thoroughly with soap before handling plants — primary transmission route is human hands/tools",
+      "Remove and destroy infected plants showing severe symptoms",
+      "Disinfect all tools with 10% trisodium phosphate solution (not alcohol — alcohol is ineffective against ToMV)",
+      "Do not smoke near plants — tobacco is a ToMV reservoir"
+    ],
+    "chemical_treatments": [
+      {
+        "product": "No curative chemical treatment available for ToMV",
+        "dose": "N/A",
+        "frequency": "N/A",
+        "icar_ref": "ICAR-IIHR Tomato Production Guide 2022, pg. 72"
+      },
+      {
+        "product": "Preventive: use certified virus-free seed and resistant varieties (TM-2 gene)",
+        "dose": "N/A",
+        "frequency": "Seed treatment: hot water at 70C for 2 min before sowing"
+      }
+    ],
+    "biological_treatments": [
+      {
+        "product": "No biological control available — focus on sanitation",
+        "dose": "N/A",
+        "frequency": "N/A"
+      }
+    ],
+    "irrigation_note": "No direct irrigation modification required.",
+    "water_stress_link": "none",
+    "icar_source": "ICAR-IIHR Technical Bulletin No. 49"
+  },
+  "Tomato_healthy": {
+    "display_name": "Healthy",
+    "pathogen": null,
+    "severity": "none",
+    "urgency": "none",
+    "description": "Plant appears healthy. No disease detected.",
+    "immediate_actions": [
+      "Continue current management practices",
+      "Maintain regular monitoring schedule"
+    ],
+    "chemical_treatments": [],
+    "biological_treatments": [],
+    "irrigation_note": "Follow sensor-model irrigation recommendations.",
+    "water_stress_link": "none",
+    "icar_source": null
+  }
+}
