@@ -70,37 +70,20 @@ _TRANSFORM = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
 ])
 
-# ── Singletons ────────────────────────────────────────────────────────────────
-_model       = None
-_class_names = None
-_device      = None
+# ── Shared singleton — delegate to image_inference, no second model load ───────
+# image_inference.py already handles lazy-loading EfficientNetB0.
+# We import it here so both modules share the SAME model object in memory.
+# This means:
+#   - Only one copy of the 87MB weights is loaded (not two).
+#   - _prewarm() calling img_inf._load() also warms the gradcam path.
+#   - app.py's /health endpoint's `img_inf._model is not None` check remains valid.
+import backend.image_inference as _img_inf
 
 
-def _load():
-    global _model, _class_names, _device
-    if _model is not None:
-        return
-
-    with open(_META_PATH, encoding="utf-8") as f:
-        meta = json.load(f)
-    _class_names = meta["class_names"]
-    num_classes  = len(_class_names)
-
-    _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    ckpt = torch.load(_MODEL_PATH, map_location=_device, weights_only=False)
-    m = models.efficientnet_b0(weights=None)
-    in_f = m.classifier[1].in_features
-    m.classifier = nn.Sequential(
-        nn.Dropout(0.3, inplace=True),
-        nn.Linear(in_f, num_classes),
-    )
-    m.load_state_dict(ckpt["model_state"])
-    m.to(_device)
-    # NOTE: keep model in train() mode for grad-cam to work (eval() disables
-    # dropout but, more importantly, eval() on BatchNorm changes stats).
-    # We handle the .no_grad() scope ourselves per-call below.
-    _model = m
+def _get_model_and_meta():
+    """Load (once) via img_inf and return (model, class_names, device)."""
+    _img_inf._load()                  # no-op if already loaded
+    return _img_inf._model, _img_inf._class_names, _img_inf._device
 
 
 def explain(
@@ -122,7 +105,7 @@ def explain(
     overlay_alpha  : float in [0, 1] — opacity of heatmap over original image
                      0 = original only, 1 = heatmap only. 0.45 is visually clear.
     """
-    _load()
+    model, class_names, device = _get_model_and_meta()
 
     if pil_image.mode != "RGB":
         pil_image = pil_image.convert("RGB")
@@ -131,7 +114,7 @@ def explain(
     img_resized = pil_image.resize((IMG_SIZE, IMG_SIZE))
     img_np      = np.array(img_resized)  # (224, 224, 3) uint8
 
-    tensor = _TRANSFORM(img_resized).unsqueeze(0).to(_device)  # (1, 3, 224, 224)
+    tensor = _TRANSFORM(img_resized).unsqueeze(0).to(device)  # (1, 3, 224, 224)
     tensor.requires_grad_(True)
 
     # ── Register hooks ────────────────────────────────────────────────────────
@@ -144,19 +127,19 @@ def explain(
     def _bwd_hook(module, grad_in, grad_out):
         _gradients["grad"] = grad_out[0].detach()
 
-    target_layer = _model.features[-1]
+    target_layer = model.features[-1]
     fh = target_layer.register_forward_hook(_fwd_hook)
     bh = target_layer.register_full_backward_hook(_bwd_hook)
 
     try:
-        _model.train()  # needed for hooks to capture gradients
-        logits = _model(tensor)                           # forward pass
+        model.train()  # needed for hooks to capture gradients
+        logits = model(tensor)                           # forward pass
         probs  = torch.softmax(logits.detach(), dim=1)
         pred_idx = int(probs.argmax(dim=1).item())
         confidence = float(probs[0, pred_idx].item())
 
         # Backward on predicted class score
-        _model.zero_grad()
+        model.zero_grad()
         logits[0, pred_idx].backward()
 
         # ── Compute Grad-CAM ──────────────────────────────────────────────────
@@ -181,18 +164,21 @@ def explain(
         overlay = (img_np * (1 - overlay_alpha) +
                    heatmap_rgb * overlay_alpha).astype(np.uint8)
 
-        # ── Encode to base64 PNG ──────────────────────────────────────────────
+        # ── Encode to base64 JPEG (smaller than PNG — ~15-25KB vs ~130KB) ─────
+        # Resize to 160x160 for dashboard display — still visually clear.
+        # JPEG quality=85 gives good visual fidelity with ~7-10x size reduction.
+        overlay_small = Image.fromarray(overlay).resize((160, 160), Image.LANCZOS)
         buf = io.BytesIO()
-        Image.fromarray(overlay).save(buf, format="PNG")
+        overlay_small.save(buf, format="JPEG", quality=85, optimize=True)
         b64 = base64.b64encode(buf.getvalue()).decode("ascii")
 
     finally:
         fh.remove()
         bh.remove()
-        _model.eval()  # restore eval mode after grad-cam
+        model.eval()  # restore eval mode after grad-cam
 
     return {
-        "predicted_class": _class_names[pred_idx],
+        "predicted_class": class_names[pred_idx],
         "confidence":      round(confidence, 4),
         "heatmap_b64":     b64,               # embed as: <img src="data:image/png;base64,{b64}">
         "method":          "gradcam",

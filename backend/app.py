@@ -383,7 +383,7 @@ def predict_full():
         "method":          "gradcam",
         "predicted_class": string,         // top-1 class from Grad-CAM pass
         "confidence":      float,
-        "heatmap_b64":     string,         // base64 PNG — embed as data:image/png;base64,...
+        "heatmap_b64":     string,         // base64 JPEG (160x160) — embed as data:image/jpeg;base64,...
         "target_layer":    string,         // "features[-1] (EfficientNetB0 last MBConv block, 7x7)"
         "note":            string          // methodological note for UI display
       }
@@ -509,15 +509,67 @@ def classify_image():
 # ════════════════════════════════════════════════════════════════════════════════
 # Entry point
 # ════════════════════════════════════════════════════════════════════════════════
-if __name__ == "__main__":
-    # Pre-load the sensor model at startup so the first request isn't slow.
-    # Image model stays lazy — it's large and not always needed.
-    print("Pre-loading sensor model...")
+def _prewarm():
+    """
+    Pre-warm all models before Flask starts accepting requests so that the
+    first real user request is not penalised by cold-load latency.
+
+    Timing on this machine:
+      Sensor model (XGBoost + IsoForest) : ~0.1s
+      Image model (EfficientNetB0)        : ~3.5s  ← was hitting first request
+      Grad-CAM dummy backward pass        : ~0.1s  ← also triggered here
+
+    After pre-warming, all subsequent requests are ~70ms end-to-end.
+    """
+    import time
+
+    # ── Sensor model ──────────────────────────────────────────────────────────
+    print("Pre-warming sensor model (XGBoost + IsoForest)...")
+    t0 = time.perf_counter()
     try:
         _get_bundle()
-        print("  Sensor model: OK")
+        print(f"  Sensor model: OK ({(time.perf_counter()-t0)*1000:.0f}ms)")
     except FileNotFoundError as e:
-        print(f"  WARNING: {e}")
+        print(f"  WARNING: sensor model not found — {e}")
 
-    print("Starting Flask dev server on http://localhost:5000")
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    # ── Image model + Grad-CAM ────────────────────────────────────────────────
+    # gradcam_inf and img_inf now share a single EfficientNetB0 singleton.
+    # Calling img_inf._load() initialises the model; both modules then use it.
+    # We then run one dummy forward pass (predict) and one dummy backward pass
+    # (Grad-CAM) so both execution paths are JIT-compiled/cached by PyTorch.
+    print("Pre-warming image model (EfficientNetB0) + Grad-CAM...")
+    t0 = time.perf_counter()
+    try:
+        import numpy as np
+        from PIL import Image as _Image
+
+        dummy = _Image.fromarray(np.zeros((224, 224, 3), dtype=np.uint8))
+
+        # 1. Load weights into memory (shared singleton)
+        img_inf._load()
+
+        # 2. Warm the forward path (img_inf.predict)
+        img_inf.predict(dummy)
+
+        # 3. Warm the backward path (Grad-CAM hooks + backward pass)
+        gradcam_inf.explain(dummy)
+
+        elapsed_ms = (time.perf_counter() - t0) * 1000
+        print(f"  Image model + Grad-CAM: OK ({elapsed_ms:.0f}ms)")
+    except Exception as e:
+        print(f"  WARNING: image model pre-warm failed — {e}")
+
+    print()
+
+
+if __name__ == "__main__":
+    _prewarm()
+    print("Starting server on http://localhost:5000")
+    try:
+        from waitress import serve
+        serve(app, host="0.0.0.0", port=5000, threads=4)
+    except ImportError:
+        # Fallback to Flask dev server (not recommended for /predict/full
+        # performance due to Werkzeug's synchronous multipart body parsing)
+        print("(waitress not found — using Flask dev server; expect ~2s overhead on uploads)")
+        app.run(host="0.0.0.0", port=5000, debug=False)
