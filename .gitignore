@@ -1,0 +1,32 @@
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+.env
+
+# ── Model weights (large binary files) ────────────────────────────────────
+*.pth
+*.pkl
+
+# ── Datasets (large image folders, download separately) ───────────────────
+data/datasets/
+
+# ── Frontend (React/Node) ─────────────────────────────────────────────────
+node_modules/
+build/
+dist/
+.next/
+
+# ── OS junk ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ───────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
