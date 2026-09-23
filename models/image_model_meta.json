@@ -14,5 +14,23 @@
   "num_classes": 10,
   "n_train": 12808,
   "n_val": 1601,
-  "n_test": 1602
-}
+  "n_test": 1602,
+  "test_accuracy_plantvillage": 0.9526,
+  "test_macro_f1_plantvillage": 0.946,
+  "fine_tuning": {
+    "method": "Classifier head only (backbone frozen), 5 epochs",
+    "additional_data": "49 Tomato-Village real farm images (10x oversampled)",
+    "augmentation": "RandomResizedCrop, ColorJitter, RandomRotation, RandomErasing",
+    "domain_gap_before": {
+      "tomato_village_accuracy": 0.4207,
+      "plantdoc_accuracy": 0.2761,
+      "healthy_recall": 0.0
+    },
+    "domain_gap_after": {
+      "tomato_village_accuracy": 0.713,
+      "plantdoc_accuracy": 0.2918,
+      "healthy_recall": 0.2667
+    },
+    "original_weights_backup": "efficientnet_plant_disease_original.pth"
+  }
+}

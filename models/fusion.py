@@ -98,6 +98,7 @@ TREATMENT_LOOKUP_PATH = os.path.join(os.path.dirname(ROOT_DIR),
 IMAGE_CONF_THRESHOLD   = 0.70   # below this: low-confidence image prediction
 CONFUSABLE_GAP_MARGIN  = 0.35   # Target_Spot/Spider_mites gap threshold
 SENSOR_IRRIG_THRESHOLD = 0.50   # XGBoost P(irrigation_needed=1) for positive call
+DOMAIN_GAP_CAUTION_THR = 0.60   # disease + sensor-healthy + conf<this => caution note
 
 # Classes where literature associates the disease with conditions that may
 # affect moisture dynamics over time (canopy damage, stomatal disruption).
@@ -316,6 +317,30 @@ def fuse(
             "Report both candidates to grower; recommend visual inspection."
         )
 
+    # ── Domain-gap caution: disease flagged on a sensor-healthy plant ──────
+    # If the image model predicts ANY disease (not healthy) but sensor data
+    # says irrigation_needed=0 (plant appears well-watered) AND disease
+    # confidence is below the caution threshold, add an explicit uncertainty
+    # note. This addresses the known ~73% miss rate on real healthy images
+    # (domain-gap evaluation: 26.7% healthy recall on field images).
+    # This does NOT suppress the alert — it frames it with appropriate
+    # uncertainty for the dashboard.
+    if (
+        disease_class is not None
+        and disease_class != "Tomato_healthy"
+        and sensor_pred == 0
+        and disease_conf < DOMAIN_GAP_CAUTION_THR
+        and not is_anomaly
+    ):
+        alerts.append(
+            f"DOMAIN_GAP_CAUTION: Disease '{disease_class}' flagged at "
+            f"{disease_conf:.1%} confidence on a plant with healthy sensor readings "
+            f"(moisture={soil_moisture_pct:.1f}%, no irrigation needed). "
+            "Our model's real-world healthy recall is ~27%, meaning it may "
+            "misclassify healthy field images as diseased. Recommend visual "
+            "confirmation before treatment."
+        )
+
     # ── Rule 4: Disease-stress watch ─────────────────────────────────────────
     # Only fires if confident, not confusable, and specific stress-linked disease
     stress_watch = (
@@ -463,6 +488,22 @@ if __name__ == "__main__":
                 "Tomato_Leaf_Mold": 0.003,
                 "Tomato__Tomato_YellowLeaf__Curl_Virus": 0.001,
                 "Tomato__Tomato_mosaic_virus": 0.001,
+            },
+        },
+        {
+            "name": "Domain-gap caution (disease flagged, sensor healthy, low conf)",
+            "moisture": 78.0, "temp": 27.0, "hum": 68.0,
+            "image_probs": {
+                "Tomato_Leaf_Mold": 0.55,
+                "Tomato_Early_blight": 0.20,
+                "Tomato_healthy": 0.10,
+                "Tomato__Target_Spot": 0.05,
+                "Tomato_Bacterial_spot": 0.04,
+                "Tomato_Late_blight": 0.03,
+                "Tomato_Septoria_leaf_spot": 0.01,
+                "Tomato_Spider_mites_Two_spotted_spider_mite": 0.01,
+                "Tomato__Tomato_YellowLeaf__Curl_Virus": 0.005,
+                "Tomato__Tomato_mosaic_virus": 0.005,
             },
         },
     ]

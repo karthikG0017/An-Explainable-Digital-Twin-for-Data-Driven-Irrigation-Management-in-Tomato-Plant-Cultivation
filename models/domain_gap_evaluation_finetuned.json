@@ -1,0 +1,277 @@
+{
+  "evaluation_date": "2026-09-23 18:45:45",
+  "fine_tune_config": {
+    "method": "classifier head only (backbone frozen)",
+    "epochs": 5,
+    "optimizer": "AdamW, lr=1e-3, weight_decay=1e-4",
+    "scheduler": "CosineAnnealingLR",
+    "pv_images": 16011,
+    "tv_finetune_images": 49,
+    "tv_oversample_weight": 10,
+    "augmentation": "RandomResizedCrop, ColorJitter, RandomRotation, RandomErasing"
+  },
+  "tv_split": {
+    "total": 164,
+    "finetune": 49,
+    "test": 115
+  },
+  "results_after_finetune": {
+    "tomato_village_heldout": {
+      "dataset": "Tomato-Village held-out test (70%)",
+      "accuracy": 0.713,
+      "macro_f1": 0.6484,
+      "correct": 82,
+      "total": 115,
+      "per_class": [
+        {
+          "class": "Tomato_Early_blight",
+          "tp": 24,
+          "fp": 9,
+          "fn": 11,
+          "support": 35,
+          "precision": 0.7273,
+          "recall": 0.6857,
+          "f1": 0.7059
+        },
+        {
+          "class": "Tomato_Late_blight",
+          "tp": 54,
+          "fp": 13,
+          "fn": 11,
+          "support": 65,
+          "precision": 0.806,
+          "recall": 0.8308,
+          "f1": 0.8182
+        },
+        {
+          "class": "Tomato_healthy",
+          "tp": 4,
+          "fp": 0,
+          "fn": 11,
+          "support": 15,
+          "precision": 1.0,
+          "recall": 0.2667,
+          "f1": 0.4211
+        }
+      ]
+    },
+    "plantdoc_untouched": {
+      "dataset": "PlantDoc combined (untouched)",
+      "accuracy": 0.2918,
+      "macro_f1": 0.2349,
+      "correct": 204,
+      "total": 699,
+      "per_class": [
+        {
+          "class": "Tomato_Bacterial_spot",
+          "tp": 1,
+          "fp": 3,
+          "fn": 103,
+          "support": 104,
+          "precision": 0.25,
+          "recall": 0.0096,
+          "f1": 0.0185
+        },
+        {
+          "class": "Tomato_Early_blight",
+          "tp": 67,
+          "fp": 314,
+          "fn": 13,
+          "support": 80,
+          "precision": 0.1759,
+          "recall": 0.8375,
+          "f1": 0.2907
+        },
+        {
+          "class": "Tomato_Late_blight",
+          "tp": 50,
+          "fp": 83,
+          "fn": 54,
+          "support": 104,
+          "precision": 0.3759,
+          "recall": 0.4808,
+          "f1": 0.4219
+        },
+        {
+          "class": "Tomato_Leaf_Mold",
+          "tp": 2,
+          "fp": 3,
+          "fn": 83,
+          "support": 85,
+          "precision": 0.4,
+          "recall": 0.0235,
+          "f1": 0.0444
+        },
+        {
+          "class": "Tomato_Septoria_leaf_spot",
+          "tp": 39,
+          "fp": 31,
+          "fn": 108,
+          "support": 147,
+          "precision": 0.5571,
+          "recall": 0.2653,
+          "f1": 0.3594
+        },
+        {
+          "class": "Tomato__Tomato_YellowLeaf__Curl_Virus",
+          "tp": 32,
+          "fp": 48,
+          "fn": 34,
+          "support": 66,
+          "precision": 0.4,
+          "recall": 0.4848,
+          "f1": 0.4384
+        },
+        {
+          "class": "Tomato__Tomato_mosaic_virus",
+          "tp": 0,
+          "fp": 2,
+          "fn": 52,
+          "support": 52,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0
+        },
+        {
+          "class": "Tomato_healthy",
+          "tp": 13,
+          "fp": 11,
+          "fn": 48,
+          "support": 61,
+          "precision": 0.5417,
+          "recall": 0.2131,
+          "f1": 0.3059
+        }
+      ]
+    },
+    "plantvillage_test": {
+      "dataset": "PlantVillage test (20% split, same seed)",
+      "accuracy": 0.9526,
+      "macro_f1": 0.946,
+      "correct": 3055,
+      "total": 3207,
+      "per_class": [
+        {
+          "class": "Tomato_Bacterial_spot",
+          "tp": 403,
+          "fp": 12,
+          "fn": 23,
+          "support": 426,
+          "precision": 0.9711,
+          "recall": 0.946,
+          "f1": 0.9584
+        },
+        {
+          "class": "Tomato_Early_blight",
+          "tp": 190,
+          "fp": 29,
+          "fn": 10,
+          "support": 200,
+          "precision": 0.8676,
+          "recall": 0.95,
+          "f1": 0.9069
+        },
+        {
+          "class": "Tomato_Late_blight",
+          "tp": 349,
+          "fp": 12,
+          "fn": 33,
+          "support": 382,
+          "precision": 0.9668,
+          "recall": 0.9136,
+          "f1": 0.9394
+        },
+        {
+          "class": "Tomato_Leaf_Mold",
+          "tp": 181,
+          "fp": 1,
+          "fn": 10,
+          "support": 191,
+          "precision": 0.9945,
+          "recall": 0.9476,
+          "f1": 0.9705
+        },
+        {
+          "class": "Tomato_Septoria_leaf_spot",
+          "tp": 348,
+          "fp": 19,
+          "fn": 7,
+          "support": 355,
+          "precision": 0.9482,
+          "recall": 0.9803,
+          "f1": 0.964
+        },
+        {
+          "class": "Tomato_Spider_mites_Two_spotted_spider_mite",
+          "tp": 332,
+          "fp": 37,
+          "fn": 4,
+          "support": 336,
+          "precision": 0.8997,
+          "recall": 0.9881,
+          "f1": 0.9418
+        },
+        {
+          "class": "Tomato__Target_Spot",
+          "tp": 233,
+          "fp": 11,
+          "fn": 48,
+          "support": 281,
+          "precision": 0.9549,
+          "recall": 0.8292,
+          "f1": 0.8876
+        },
+        {
+          "class": "Tomato__Tomato_YellowLeaf__Curl_Virus",
+          "tp": 629,
+          "fp": 3,
+          "fn": 13,
+          "support": 642,
+          "precision": 0.9953,
+          "recall": 0.9798,
+          "f1": 0.9874
+        },
+        {
+          "class": "Tomato__Tomato_mosaic_virus",
+          "tp": 75,
+          "fp": 10,
+          "fn": 0,
+          "support": 75,
+          "precision": 0.8824,
+          "recall": 1.0,
+          "f1": 0.9375
+        },
+        {
+          "class": "Tomato_healthy",
+          "tp": 315,
+          "fp": 18,
+          "fn": 4,
+          "support": 319,
+          "precision": 0.9459,
+          "recall": 0.9875,
+          "f1": 0.9663
+        }
+      ]
+    }
+  },
+  "before_after": {
+    "tomato_village": {
+      "before_accuracy": 0.4207,
+      "after_accuracy": 0.713,
+      "note": "Before=full 164 images; After=held-out 70% only"
+    },
+    "plantdoc": {
+      "before_accuracy": 0.2761,
+      "after_accuracy": 0.2918
+    },
+    "plantvillage": {
+      "before_accuracy": 0.9388,
+      "after_accuracy": 0.9526
+    },
+    "healthy_recall": {
+      "before": 0.0,
+      "after": 0.2667,
+      "delta_pp": 26.7
+    }
+  }
+}
