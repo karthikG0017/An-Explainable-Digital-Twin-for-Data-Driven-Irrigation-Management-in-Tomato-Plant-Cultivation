@@ -9,6 +9,7 @@ ENDPOINTS
   GET  /health
   GET  /api/classes
   GET  /api/confusion_matrix
+  GET  /api/history/<plant_id>
   POST /api/predict/sensor
   POST /api/predict/full
 
@@ -41,6 +42,7 @@ from __future__ import annotations
 
 import os
 import sys
+import csv
 import json
 import traceback
 import io
@@ -503,6 +505,89 @@ def classify_image():
         "probabilities": probs,
         "top_class":     top_class,
         "top_confidence": probs[top_class],
+    })
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# History endpoint (Item 7c)
+# ════════════════════════════════════════════════════════════════════════════════
+
+_history_cache = {}  # plant_id -> list of dicts
+
+def _load_history(plant_id: str) -> list:
+    """Load and cache simulated CSV data for a plant."""
+    if plant_id in _history_cache:
+        return _history_cache[plant_id]
+
+    csv_path = os.path.join(_ROOT, "data", "processed", f"{plant_id}_labeled.csv")
+    if not os.path.isfile(csv_path):
+        return []
+
+    rows = []
+    with open(csv_path, "r", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rows.append({
+                "timestamp":        row["timestamp"],
+                "soil_moisture_pct": float(row["soil_moisture_pct"]),
+                "temperature_c":    float(row["temperature_c"]),
+                "humidity_pct":     float(row["humidity_pct"]),
+                "watered":          int(row.get("watered", 0)),
+            })
+    _history_cache[plant_id] = rows
+    return rows
+
+
+@app.route("/api/history/<plant_id>", methods=["GET"])
+def get_history(plant_id):
+    """
+    GET /api/history/<plant_id>
+
+    Returns historical sensor readings for a plant from simulated CSV data.
+
+    Parameters
+    ----------
+    plant_id : str
+        "plant_a" or "plant_b"
+
+    Query parameters (optional)
+    ---------------------------
+    last : int
+        Only return the last N data points (default: all).
+
+    Response 200
+    ------------
+    {
+      "plant_id": "plant_a",
+      "count": 2016,
+      "data": [
+        {
+          "timestamp": "2024-06-01T06:00:00",
+          "soil_moisture_pct": 74.7,
+          "temperature_c": 38.03,
+          "humidity_pct": 41.79,
+          "watered": 0
+        },
+        ...
+      ]
+    }
+    """
+    if plant_id not in ("plant_a", "plant_b"):
+        abort(400, f"Invalid plant_id: {plant_id}. Use 'plant_a' or 'plant_b'.")
+
+    rows = _load_history(plant_id)
+    if not rows:
+        abort(404, f"No history data found for {plant_id}.")
+
+    # Optional: limit to last N data points
+    last_n = request.args.get("last", type=int)
+    if last_n and last_n > 0:
+        rows = rows[-last_n:]
+
+    return jsonify({
+        "plant_id": plant_id,
+        "count":    len(rows),
+        "data":     rows,
     })
 
 
