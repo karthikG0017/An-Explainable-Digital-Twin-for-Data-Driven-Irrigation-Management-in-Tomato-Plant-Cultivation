@@ -592,6 +592,73 @@ def get_history(plant_id):
 
 
 # ════════════════════════════════════════════════════════════════════════════════
+# ENDPOINT 7 — A/B Comparison (Item 7e)
+# ════════════════════════════════════════════════════════════════════════════════
+IRRIGATION_THRESHOLD  = 70.0
+HIGH_STRESS_THRESHOLD = 50.0
+
+
+def _compute_comparison(plant_id):
+    """Compute summary stats for one plant's historical data."""
+    rows = _load_history(plant_id)
+    if not rows:
+        return None
+
+    total = len(rows)
+    moistures = [r["soil_moisture_pct"] for r in rows]
+    watered = sum(1 for r in rows if r.get("watered", 0) == 1)
+
+    healthy = sum(1 for m in moistures if m >= IRRIGATION_THRESHOLD)
+    moderate = sum(1 for m in moistures if HIGH_STRESS_THRESHOLD <= m < IRRIGATION_THRESHOLD)
+    high = sum(1 for m in moistures if m < HIGH_STRESS_THRESHOLD)
+
+    return {
+        "plant_id":             plant_id,
+        "total_readings":       total,
+        "avg_moisture":         round(sum(moistures) / total, 1),
+        "min_moisture":         round(min(moistures), 1),
+        "max_moisture":         round(max(moistures), 1),
+        "irrigation_events":    watered,
+        "healthy_pct":          round(healthy / total * 100, 1),
+        "moderate_stress_pct":  round(moderate / total * 100, 1),
+        "high_stress_pct":      round(high / total * 100, 1),
+    }
+
+
+@app.route("/api/comparison", methods=["GET"])
+def get_comparison():
+    """
+    GET /api/comparison
+
+    Returns side-by-side A/B comparison metrics for Plant A (fixed-schedule)
+    and Plant B (AI-managed) computed from historical CSV data.
+
+    Response 200
+    ------------
+    {
+      "plant_a": { ... stats ... },
+      "plant_b": { ... stats ... },
+      "note": "Simulated comparison ..."
+    }
+    """
+    a_stats = _compute_comparison("plant_a")
+    b_stats = _compute_comparison("plant_b")
+
+    if not a_stats or not b_stats:
+        abort(500, "Could not load history data for comparison.")
+
+    return jsonify({
+        "plant_a": a_stats,
+        "plant_b": b_stats,
+        "note": (
+            "Simulated comparison using the system's 70% soil moisture "
+            "threshold decision rule, run prior to full hardware deployment. "
+            "Not a live field result."
+        ),
+    })
+
+
+# ════════════════════════════════════════════════════════════════════════════════
 # Entry point
 # ════════════════════════════════════════════════════════════════════════════════
 def _prewarm():

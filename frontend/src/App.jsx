@@ -3,12 +3,14 @@
  *
  * Item 7a: Live Status View
  * Item 7d: What-If Simulator
+ * Item 7e: A/B Comparison
  * Shows two plant cards side-by-side (Plant A: fixed-schedule, Plant B: AI-managed).
  * Fetches status via API (mock or live) and displays all FusionResult fields.
  */
 import { useState, useEffect, useCallback } from 'react';
 import PlantCard from './components/PlantCard';
 import WhatIfSimulator from './components/WhatIfSimulator';
+import ABComparison from './components/ABComparison';
 import { fetchPlantStatus } from './api';
 import './index.css';
 
@@ -101,6 +103,9 @@ export default function App() {
             loading={plantB.loading}
           />
         </div>
+
+        {/* Item 7e: A/B Comparison */}
+        <ABComparison />
 
         {/* Item 7d: What-If Simulator */}
         <WhatIfSimulator />
