@@ -1,0 +1,163 @@
+@startuml class_diagram
+skinparam backgroundColor white
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam classAttributeIconSize 0
+
+skinparam class {
+  BackgroundColor white
+  BorderColor #444444
+  FontColor #222222
+  HeaderBackgroundColor #F0F0F0
+}
+
+skinparam package {
+  BackgroundColor #F7F7F7
+  BorderColor #444444
+  FontStyle bold
+}
+
+skinparam enum {
+  BackgroundColor white
+  BorderColor #444444
+  HeaderBackgroundColor #F0F0F0
+}
+
+title <b>Diagram 4 — Class Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
+
+' ═══════ FUSION MODULE (models/fusion.py) ═══════
+package "models/fusion.py" {
+
+  class FusionResult <<dataclass>> {
+    -- Core Decision --
+    + status : str
+    + irrigate : bool
+    -- Sensor Model Outputs --
+    + sensor_irrigation_needed : int
+    + sensor_probability : float
+    + sensor_anomaly : bool
+    + soil_moisture_pct : float
+    + temperature_c : float
+    + humidity_pct : float
+    -- Image Model Outputs --
+    + disease_class : Optional[str]
+    + disease_confidence : float
+    + disease_low_confidence : bool
+    + known_confusable_pair : bool
+    + top2_gap : Optional[float]
+    + disease_stress_watch : bool
+    -- Treatment & Explanation --
+    + treatment : dict
+    + sensor_explanation : dict
+    + image_explanation : dict
+    + alerts : list[str]
+  }
+
+  enum FusionStatus <<enumeration>> {
+    HOLD
+    IRRIGATE
+    IRRIGATE_WITH_ALERT
+    HOLD_WITH_ALERT
+    DISEASE_STRESS_WATCH
+    SENSOR_ANOMALY
+    UNCERTAIN
+  }
+
+  class FusionEngine <<module>> {
+    - IMAGE_CONF_THRESHOLD : float = 0.70
+    - CONFUSABLE_GAP_MARGIN : float = 0.35
+    - SENSOR_IRRIG_THRESHOLD : float = 0.50
+    - STRESS_ASSOCIATED_DISEASES : set
+    - CONFUSABLE_PAIR : frozenset
+    --
+    + fuse(soil_moisture, temp, humidity, image_probs) : FusionResult
+    + run_sensor_model(moisture, temp, humidity) : tuple
+    + analyze_image_probs(image_probs) : tuple
+    - _get_bundle() : dict
+    - _get_treatment(disease_class) : dict
+  }
+
+  FusionEngine ..> FusionResult : creates
+  FusionResult --> FusionStatus : status uses
+}
+
+' ═══════ BACKEND (backend/app.py) ═══════
+package "backend/app.py" {
+
+  class FlaskApp <<controller>> {
+    - _shap_explainer : TreeExplainer
+    - _history_cache : dict
+    --
+    + health() : JSON
+    + get_classes() : JSON
+    + get_confusion_matrix() : JSON
+    + predict_sensor() : JSON
+    + predict_full() : JSON
+    + classify_image() : JSON
+    + get_history(plant_id) : JSON
+    + get_comparison() : JSON
+    --
+    - _compute_shap(moisture, temp, humidity) : dict
+    - _parse_sensor_fields(source) : tuple
+    - _load_history(plant_id) : list
+    - _compute_comparison(plant_id) : dict
+  }
+}
+
+' ═══════ IMAGE INFERENCE (backend/image_inference.py) ═══════
+package "backend/image_inference.py" {
+
+  class ImageClassifier <<module>> {
+    - _model : EfficientNetB0
+    - _meta : dict
+    - _transform : Compose
+    --
+    + predict(pil_image) : dict
+    + get_class_names() : list
+    - _load() : tuple
+  }
+}
+
+' ═══════ GRAD-CAM (backend/gradcam_inference.py) ═══════
+package "backend/gradcam_inference.py" {
+
+  class GradCAMExplainer <<module>> {
+    --
+    + explain(pil_image, target_class) : dict
+    - _get_model_and_meta() : tuple
+  }
+}
+
+' ═══════ SENSOR MODEL (models/train_sensor_model.py) ═══════
+package "Model Artifacts" {
+
+  class XGBClassifier <<sklearn>> {
+    + predict(X) : ndarray
+    + predict_proba(X) : ndarray
+  }
+
+  class IsolationForest <<sklearn>> {
+    + predict(X) : ndarray
+    + decision_function(X) : ndarray
+  }
+
+  class TreeExplainer <<shap>> {
+    + shap_values(X) : ndarray
+  }
+}
+
+' ═══════ RELATIONSHIPS ═══════
+FlaskApp --> FusionEngine : fuse()
+FlaskApp --> ImageClassifier : predict()
+FlaskApp --> GradCAMExplainer : explain()
+FlaskApp --> TreeExplainer : shap_values()
+
+FusionEngine --> XGBClassifier : predict()\npredict_proba()
+FusionEngine --> IsolationForest : predict()
+
+ImageClassifier ..> XGBClassifier : shares\nmodel artifacts
+GradCAMExplainer ..> ImageClassifier : reuses\nEfficientNetB0
+
+@enduml

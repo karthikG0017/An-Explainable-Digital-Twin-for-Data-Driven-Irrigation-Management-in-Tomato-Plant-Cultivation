@@ -1,0 +1,100 @@
+@startuml activity_diagram
+skinparam backgroundColor white
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 6
+
+skinparam activity {
+  BackgroundColor white
+  BorderColor #444444
+  FontColor #222222
+  DiamondBackgroundColor white
+  DiamondBorderColor #444444
+}
+
+skinparam partition {
+  BackgroundColor #F7F7F7
+  BorderColor #444444
+  FontStyle bold
+}
+
+title <b>Diagram 6 -- Activity Diagram</b>\nFusion Decision Workflow (models/fusion.py)
+
+start
+
+:Receive sensor readings\n(soil_moisture, temperature, humidity)\nand optional leaf image;
+
+partition "Rule 1 -- Sensor Model" {
+  :Run **XGBoost** predict()\nsensor_pred (0 or 1)\nsensor_prob P(irrigate);
+
+  :Run **Isolation Forest** predict()\nis_anomaly (true/false);
+}
+
+partition "Rule 2 and 3 -- Image Analysis" {
+  if (leaf image\nprovided?) then (yes)
+    :Run **EfficientNetB0** predict()\nimage_probs;
+
+    if (top1_prob < 0.70?) then (yes)
+      :low_confidence = true\nAdd LOW_CONFIDENCE alert;
+    else (no)
+      :low_confidence = false;
+    endif
+
+    if (Target_Spot / Spider_mites\npair AND gap < 0.35?) then (yes)
+      :known_confusable = true\nAdd UNCERTAIN_PAIR alert;
+    else (no)
+      :known_confusable = false;
+    endif
+  else (no image)
+    :disease_class = None;
+  endif
+}
+
+partition "Rule 4 -- Disease-Stress Watch" {
+  if (stress-linked disease\nAND confident\nAND sensor_pred == 0?) then (yes)
+    :stress_watch = true\nAdd STRESS_WATCH alert;
+  else (no)
+    :stress_watch = false;
+  endif
+}
+
+partition "Rule 5 -- Final Status" {
+  if (is_anomaly?) then (yes)
+    :status = **SENSOR_ANOMALY**\nirrigate = false;
+  else (no)
+    if (confusable OR\nlow_conf + hold?) then (yes)
+      :status = **UNCERTAIN**\nirrigate = false;
+    else (no)
+      if (sensor_pred == 1?) then (yes)
+        if (disease + high conf?) then (yes)
+          :status = **IRRIGATE_WITH_ALERT**\nirrigate = true;
+        else (no)
+          :status = **IRRIGATE**\nirrigate = true;
+        endif
+      else (sensor_pred == 0)
+        if (stress_watch?) then (yes)
+          :status = **DISEASE_STRESS_WATCH**\nirrigate = false;
+        else (no)
+          if (disease + high conf?) then (yes)
+            :status = **HOLD_WITH_ALERT**\nirrigate = false;
+          else (no)
+            :status = **HOLD**\nirrigate = false;
+          endif
+        endif
+      endif
+    endif
+  endif
+}
+
+:Attach SHAP sensor explanation;
+
+:Attach Grad-CAM heatmap\n(if image provided);
+
+:Lookup treatment from\ndisease_treatment_lookup.json;
+
+:Build **FusionResult** dataclass\nReturn JSON to dashboard;
+
+stop
+
+@enduml

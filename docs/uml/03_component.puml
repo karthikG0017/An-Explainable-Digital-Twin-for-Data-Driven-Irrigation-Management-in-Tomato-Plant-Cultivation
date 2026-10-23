@@ -1,0 +1,102 @@
+@startuml component_diagram
+skinparam backgroundColor white
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam packageStyle rectangle
+skinparam nodesep 20
+skinparam ranksep 30
+
+skinparam component {
+  BackgroundColor white
+  BorderColor #444444
+  FontColor #222222
+}
+
+skinparam package {
+  BackgroundColor #F7F7F7
+  BorderColor #444444
+  FontStyle bold
+}
+
+skinparam database {
+  BackgroundColor white
+  BorderColor #444444
+}
+
+title <b>Diagram 3 — Component Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
+
+' ═══════ FRONTEND ═══════
+package "Frontend  (React + Vite + Chart.js)" {
+  component [App.jsx] as APP
+  component [PlantCard.jsx] as PC
+  component [ExplainabilityPanel.jsx\n+ ShapBars.jsx] as EP
+  component [HistoryChart.jsx] as HC
+  component [WhatIfSimulator.jsx] as WIS
+  component [ABComparison.jsx] as ABC
+  component [api.js] as APIJS
+
+  APP --> PC
+  APP --> WIS
+  APP --> ABC
+  PC --> EP
+  PC --> HC
+}
+
+' ═══════ API INTERFACE ═══════
+interface "REST API\n(8 endpoints)" as I_API
+
+APIJS ..> I_API : HTTP / JSON
+
+' ═══════ BACKEND ═══════
+package "Backend  (Flask + Waitress)" {
+  component [app.py\nREST Controller] as APPPY
+  APPPY -up- I_API
+}
+
+' ═══════ ML & EXPLAINABILITY ═══════
+package "ML & Explainability" {
+  component [XGBoost\nIrrigation Classifier] as XGB
+  component [Isolation Forest\nAnomaly Detector] as ISO
+  component [SHAP TreeExplainer] as SHAP
+  component [EfficientNetB0\nDisease Classifier] as ENET
+  component [Grad-CAM] as GCAM
+  component [LIME (offline only)] as LIME #white;line.dashed
+  component [Late Fusion Engine\nmodels/fusion.py] as FUSION
+
+  XGB --> FUSION
+  ISO --> FUSION
+  ENET --> FUSION
+}
+
+APPPY --> XGB
+APPPY --> ISO
+APPPY --> SHAP
+APPPY --> ENET
+APPPY --> GCAM
+APPPY --> FUSION
+
+' ═══════ DATA & STORAGE ═══════
+package "Data & Storage" {
+  database [Sensor CSVs\ndata/raw/ · data/processed/] as CSV
+  database [PlantVillage\nImage Dataset] as PV
+  database [disease_treatment_lookup.json] as TREAT
+  database [Model Artifacts\n.pkl · .pth] as MODELS
+  database [Firebase RTDB\n(planned)] as FB #white;line.dashed
+}
+
+APPPY ..> CSV
+FUSION ..> TREAT
+MODELS ..> XGB
+MODELS ..> ENET
+
+' ═══════ PLANNED ═══════
+component [ESP32 Sensor Node\n(planned)] as ESP32 #white;line.dashed
+component [OpenWeatherMap API\n(planned)] as OWM #white;line.dashed
+
+ESP32 .[#888888,dashed].> FB
+FB .[#888888,dashed].> APPPY
+OWM .[#888888,dashed].> FUSION
+
+@enduml

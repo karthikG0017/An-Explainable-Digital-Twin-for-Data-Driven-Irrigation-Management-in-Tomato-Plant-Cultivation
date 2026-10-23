@@ -1,0 +1,100 @@
+@startuml sequence_diagram
+skinparam backgroundColor white
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceLifeLineBorderColor #444444
+skinparam sequenceParticipantBorderColor #444444
+skinparam sequenceParticipantBackgroundColor white
+skinparam sequenceGroupBorderColor #888888
+skinparam sequenceDividerBorderColor #888888
+
+skinparam note {
+  BackgroundColor #FFFFEE
+  BorderColor #AAAAAA
+  FontSize 10
+}
+
+title <b>Diagram 5 — Sequence Diagram</b>\nFull Prediction Flow (POST /api/predict/full)
+
+actor "Farmer" as USER
+participant "App.jsx\n(React)" as FE
+participant "api.js" as API
+participant "app.py\n(Flask)" as FLASK
+participant "image_inference.py\n(EfficientNetB0)" as IMG
+participant "gradcam_inference.py\n(Grad-CAM)" as GCAM
+participant "SHAP\nTreeExplainer" as SHAP
+participant "fusion.py\n(FusionEngine)" as FUSION
+database "disease_treatment\n_lookup.json" as TREAT
+
+== Dashboard Load ==
+
+USER -> FE : opens dashboard
+activate FE
+FE -> API : fetchPlantStatus("B")
+activate API
+API -> FLASK : POST /api/predict/full\n{sensor fields + leaf image}
+activate FLASK
+
+== Sensor Parsing ==
+FLASK -> FLASK : _parse_sensor_fields()\n(moisture, temp, humidity)
+
+== Image Classification ==
+FLASK -> IMG : predict(pil_image)
+activate IMG
+IMG -> IMG : _load() model & meta\n(cached after first call)
+IMG -> IMG : transform + forward pass
+IMG --> FLASK : image_probs {class: probability}
+deactivate IMG
+
+== Grad-CAM Explanation (~53ms) ==
+FLASK -> GCAM : explain(pil_image)
+activate GCAM
+GCAM -> GCAM : forward + backward pass\non last MBConv block
+GCAM --> FLASK : {heatmap_b64, predicted_class,\nconfidence, target_layer}
+deactivate GCAM
+
+== SHAP Explanation ==
+FLASK -> SHAP : _compute_shap()\nshap_values(X)
+activate SHAP
+SHAP --> FLASK : {soil_moisture: -7.5,\ntemperature: -0.28,\nhumidity: -0.30}
+deactivate SHAP
+
+== Late Fusion ==
+FLASK -> FUSION : fuse(moisture, temp, humidity,\nimage_probs, shap_vals, gradcam)
+activate FUSION
+
+FUSION -> FUSION : run_sensor_model()\nXGBoost predict + IsolationForest
+
+FUSION -> FUSION : analyze_image_probs()\nconfidence gate + confusable pair check
+
+FUSION -> TREAT : _get_treatment(disease_class)
+activate TREAT
+TREAT --> FUSION : {display_name, pathogen,\nseverity, urgency, ...}
+deactivate TREAT
+
+FUSION -> FUSION : apply Rules 1-5\ndetermine status code
+
+FUSION --> FLASK : FusionResult dataclass
+deactivate FUSION
+
+== Response ==
+FLASK --> API : 200 OK  JSON\n{status, irrigate, disease_class,\ntreatment, sensor_explanation,\nimage_explanation, alerts}
+deactivate FLASK
+
+API --> FE : FusionResult object
+deactivate API
+
+== Dashboard Rendering ==
+
+FE -> FE : PlantCard renders status,\nmoisture, urgency tier
+FE -> FE : ExplainabilityPanel\nrenders ShapBars
+FE -> FE : ExplainabilityPanel\nrenders Grad-CAM heatmap
+
+FE --> USER : Dashboard with\nirrigation decision,\nexplanations, and\ndisease treatment
+
+deactivate FE
+
+@enduml

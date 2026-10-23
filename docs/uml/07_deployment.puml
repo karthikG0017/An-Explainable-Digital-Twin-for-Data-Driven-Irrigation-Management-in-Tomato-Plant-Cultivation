@@ -1,0 +1,110 @@
+@startuml deployment_diagram
+skinparam backgroundColor white
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 6
+
+skinparam node {
+  BackgroundColor white
+  BorderColor #444444
+  FontColor #222222
+}
+
+skinparam artifact {
+  BackgroundColor white
+  BorderColor #444444
+}
+
+skinparam database {
+  BackgroundColor white
+  BorderColor #444444
+}
+
+skinparam cloud {
+  BackgroundColor white
+  BorderColor #444444
+}
+
+skinparam note {
+  BackgroundColor #FFFFEE
+  BorderColor #AAAAAA
+  FontSize 10
+}
+
+title <b>Diagram 7 -- Deployment Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
+
+' ========== DEVELOPER / SERVER NODE ==========
+node "Development Machine\n(localhost)" as DEV {
+
+  node "Frontend Server\nVite Dev Server\nlocalhost:5173" as VITE {
+    artifact "App.jsx" as APP_JSX
+    artifact "PlantCard.jsx" as PC_JSX
+    artifact "ExplainabilityPanel.jsx\n+ ShapBars.jsx" as EP_JSX
+    artifact "HistoryChart.jsx" as HC_JSX
+    artifact "WhatIfSimulator.jsx" as WIS_JSX
+    artifact "ABComparison.jsx" as ABC_JSX
+    artifact "api.js" as API_JS
+  }
+
+  node "Backend Server\nFlask + Waitress (4 threads)\nlocalhost:5000" as FLASK_NODE {
+    artifact "app.py\n(REST API controller)" as APP_PY
+
+    node "ML Runtime\n(Python 3.13)" as ML_RT {
+      artifact "XGBoost Classifier\nxgboost_irrigation.pkl" as XGB_ART
+      artifact "Isolation Forest\n(bundled in pkl)" as ISO_ART
+      artifact "SHAP TreeExplainer" as SHAP_ART
+      artifact "EfficientNetB0\nefficientnet_finetuned.pth" as ENET_ART
+      artifact "Grad-CAM\ngradcam_inference.py" as GCAM_ART
+      artifact "Late Fusion Engine\nmodels/fusion.py" as FUSE_ART
+    }
+  }
+
+  database "Local Filesystem" as FS {
+    artifact "data/raw/*.csv\ndata/processed/*.csv" as CSV_ART
+    artifact "PlantVillage\nImage Dataset" as PV_ART
+    artifact "disease_treatment\n_lookup.json" as TREAT_ART
+    artifact "models/*.pkl\nmodels/*.pth" as MODEL_FILES
+  }
+}
+
+' ========== USER BROWSER ==========
+node "User Browser\n(Chrome / Edge)" as BROWSER {
+  artifact "React SPA\n(HTML + JS + CSS)" as SPA
+  artifact "Chart.js\n(HistoryChart rendering)" as CHARTJS
+}
+
+' ========== PLANNED: FIELD ==========
+node "Field Installation\n(planned)" <<planned>> as FIELD #white;line.dashed {
+  node "ESP32 Sensor Node\nPer-plant" <<planned>> as ESP32_NODE #white;line.dashed {
+    artifact "Capacitive Soil\nMoisture Sensor" as SOIL_SENSOR #white;line.dashed
+    artifact "DHT22\n(Temp + Humidity)" as DHT22 #white;line.dashed
+  }
+  artifact "Camera Module\n(leaf image capture)" as CAMERA
+}
+
+' ========== PLANNED: CLOUD ==========
+cloud "Cloud Services\n(planned)" <<planned>> as CLOUD #white;line.dashed {
+  database "Firebase RTDB\n(planned)" as FB #white;line.dashed
+  node "OpenWeatherMap\nAPI (planned)" as OWM #white;line.dashed
+}
+
+' ========== CONNECTIONS ==========
+' Browser to frontend
+BROWSER -down-> VITE : HTTP GET\nlocalhost:5173
+
+' Frontend proxy to backend
+VITE -down-> FLASK_NODE : Vite proxy\n/api/* -> :5000
+
+' Backend reads filesystem
+FLASK_NODE -right-> FS : reads CSVs,\nmodel files,\ntreatments
+
+' Planned connections
+ESP32_NODE .[#888888,dashed].> FB : push readings\n(Wi-Fi, planned)
+FB .[#888888,dashed].> FLASK_NODE : live sensor data\n(planned)
+OWM .[#888888,dashed].> FLASK_NODE : weather forecast\n(planned)
+
+' Camera to frontend
+CAMERA .[#888888,dashed].> BROWSER : upload leaf\nimage (planned)
+
+@enduml
