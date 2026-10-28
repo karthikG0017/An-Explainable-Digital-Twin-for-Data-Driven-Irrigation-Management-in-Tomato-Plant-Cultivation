@@ -29,81 +29,58 @@ skinparam note {
   FontSize 10
 }
 
-title <b>Diagram 2 — Use Case Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
+title <b>Diagram 2 -- Use Case Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
 
-' ── Actors ──────────────────────────────────
+' -- Actors --
 actor "Farmer /\nDomain Expert" as FARMER
 actor "ESP32 Sensor\nNode (planned)" as ESP32 #white;line.dashed
-actor "Camera\nModule" as CAMERA
 
-' ── System boundary ─────────────────────────
-rectangle "Digital Twin Irrigation System" as SYS {
+' -- System boundary --
+rectangle "Explainable Digital Twin for Data-Driven Irrigation Management" as SYS {
 
-  ' -- Monitoring use cases --
-  usecase "View live plant status\n(PlantCard.jsx)" as UC1
-  usecase "View historical\ntrends (HistoryChart.jsx)" as UC2
-  usecase "Compare Plant A vs B\n(ABComparison.jsx)" as UC3
+  ' -- Dashboard (central use case) --
+  usecase "Access Dashboard" as DASHBOARD
 
-  ' -- Prediction use cases --
-  usecase "Get sensor-based\nirrigation prediction\nPOST /api/predict/sensor" as UC4
-  usecase "Upload leaf image for\ndisease classification\nPOST /api/classify/image" as UC5
-  usecase "Get full fusion\nprediction (sensor + image)\nPOST /api/predict/full" as UC6
+  ' -- Dashboard includes these three --
+  usecase "View Live Plant Status" as UC_VIEW
+  usecase "Compare Plant Data" as UC_COMPARE
+  usecase "Diagnose Plant Disease" as UC_DIAGNOSE
 
-  ' -- Explainability use cases --
-  usecase "View SHAP sensor\nexplanation (ShapBars.jsx)" as UC7
-  usecase "View Grad-CAM\nheatmap overlay" as UC8
-  usecase "View disease treatment\nrecommendation\n(ICAR-sourced)" as UC9
+  ' -- Other farmer use cases --
+  usecase "View Historical Trends" as UC_HISTORY
+  usecase "Run What-If Simulation" as UC_WHATIF
+  usecase "Get Comprehensive\nHealth Prediction" as UC_FULL
 
-  ' -- What-if use cases --
-  usecase "Run what-if simulation\n(WhatIfSimulator.jsx)" as UC10
+  ' -- Explainability --
+  usecase "View AI Explanation" as UC_EXPLAIN
 
-  ' -- System internal use cases --
-  usecase "Classify disease\n(EfficientNetB0)" as UC11
-  usecase "Predict irrigation\nneed (XGBoost)" as UC12
-  usecase "Detect sensor\nanomaly (Isolation Forest)" as UC13
-  usecase "Fuse results\n(Late Fusion Engine\nmodels/fusion.py)" as UC14
-  usecase "Compute SHAP values\n(TreeExplainer)" as UC15
-  usecase "Generate Grad-CAM\n(gradcam_inference.py)" as UC16
+  ' -- Treatment --
+  usecase "View Treatment\nRecommendation" as UC_TREAT
 
-  ' -- Planned use cases --
-  usecase "Push live sensor\nreadings (planned)" as UC17 #white;line.dashed
-  usecase "Fetch weather\nforecast (planned)" as UC18 #white;line.dashed
+  ' -- Planned --
+  usecase "Push Live Sensor\nData (planned)" as UC_PUSH #white;line.dashed
 }
 
-' ── Farmer interactions ─────────────────────
-FARMER --> UC1
-FARMER --> UC2
-FARMER --> UC3
-FARMER --> UC5
-FARMER --> UC10
-FARMER --> UC6
+' -- Farmer interactions --
+FARMER --> DASHBOARD
+FARMER --> UC_HISTORY
+FARMER --> UC_WHATIF
+FARMER --> UC_FULL
 
-' ── Include/extend relationships ────────────
-UC1 ..> UC4 : <<include>>
-UC1 ..> UC7 : <<include>>
-UC1 ..> UC8 : <<include>>
+' -- Dashboard includes --
+DASHBOARD ..> UC_VIEW : <<include>>
+DASHBOARD ..> UC_COMPARE : <<include>>
+DASHBOARD ..> UC_DIAGNOSE : <<include>>
 
-UC4 ..> UC12 : <<include>>
-UC4 ..> UC13 : <<include>>
-UC4 ..> UC15 : <<include>>
+' -- Include/extend relationships --
+UC_FULL ..> UC_EXPLAIN : <<include>>
+UC_VIEW ..> UC_EXPLAIN : <<include>>
 
-UC5 ..> UC11 : <<include>>
-UC6 ..> UC12 : <<include>>
-UC6 ..> UC11 : <<include>>
-UC6 ..> UC14 : <<include>>
-UC6 ..> UC16 : <<include>>
+UC_WHATIF ..> UC_VIEW : <<include>>
 
-UC11 ..> UC9 : <<extend>>\nif disease detected
+UC_DIAGNOSE ..> UC_TREAT : <<extend>>\nif disease detected
 
-UC10 ..> UC4 : <<include>>
-
-' ── Sensor / Camera interactions ────────────
-ESP32 .[#888888,dashed].> UC17
-CAMERA --> UC5
-CAMERA --> UC6
-
-' ── Planned ─────────────────────────────────
-UC17 ..> UC4 : <<extend>>\n(planned)
-UC18 .[#888888,dashed].> UC14 : <<extend>>\n(planned)
+' -- Planned --
+ESP32 .[#888888,dashed].> UC_PUSH
 
 @enduml

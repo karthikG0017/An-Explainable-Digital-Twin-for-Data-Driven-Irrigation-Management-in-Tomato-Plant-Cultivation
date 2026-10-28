@@ -4,6 +4,8 @@ skinparam defaultFontName "Segoe UI"
 skinparam defaultFontSize 12
 skinparam shadowing false
 skinparam roundCorner 6
+skinparam nodesep 25
+skinparam ranksep 30
 
 skinparam node {
   BackgroundColor white
@@ -34,77 +36,84 @@ skinparam note {
 
 title <b>Diagram 7 -- Deployment Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
 
-' ========== DEVELOPER / SERVER NODE ==========
-node "Development Machine\n(localhost)" as DEV {
+' ═══════ ROW 1: USER BROWSER ═══════
+node "<<client device>>\nUser Browser\n(Chrome / Edge)" as BROWSER {
+  artifact "React SPA\n(HTML5 + JS + CSS)" as SPA
+  artifact "Chart.js v4\n(Canvas rendering)" as CHARTJS
+}
 
-  node "Frontend Server\nVite Dev Server\nlocalhost:5173" as VITE {
+' ═══════ ROW 2: DEVELOPMENT MACHINE ═══════
+node "<<execution environment>>\nDevelopment Machine\n(Windows 11, localhost)" as DEV {
+
+  node "<<web server>>\nFrontend Server\nNode.js + Vite Dev Server\nlocalhost:5173" as VITE {
     artifact "App.jsx" as APP_JSX
     artifact "PlantCard.jsx" as PC_JSX
-    artifact "ExplainabilityPanel.jsx\n+ ShapBars.jsx" as EP_JSX
-    artifact "HistoryChart.jsx" as HC_JSX
     artifact "WhatIfSimulator.jsx" as WIS_JSX
     artifact "ABComparison.jsx" as ABC_JSX
-    artifact "api.js" as API_JS
+    artifact "api.js (Axios)" as API_JS
   }
 
-  node "Backend Server\nFlask + Waitress (4 threads)\nlocalhost:5000" as FLASK_NODE {
-    artifact "app.py\n(REST API controller)" as APP_PY
+  node "<<application server>>\nBackend Server\nWaitress WSGI (4 threads)\nlocalhost:5000" as FLASK_NODE {
+    artifact "app.py\n(Flask REST controller)" as APP_PY
 
-    node "ML Runtime\n(Python 3.13)" as ML_RT {
+    node "<<runtime>>\nPython 3.13 Runtime" as ML_RT {
       artifact "XGBoost Classifier\nxgboost_irrigation.pkl" as XGB_ART
       artifact "Isolation Forest\n(bundled in pkl)" as ISO_ART
       artifact "SHAP TreeExplainer" as SHAP_ART
-      artifact "EfficientNetB0\nefficientnet_finetuned.pth" as ENET_ART
+      artifact "EfficientNetB0\nefficientnet_finetuned.pth\n(PyTorch)" as ENET_ART
       artifact "Grad-CAM\ngradcam_inference.py" as GCAM_ART
       artifact "Late Fusion Engine\nmodels/fusion.py" as FUSE_ART
     }
   }
 
-  database "Local Filesystem" as FS {
+  database "<<file system>>\nLocal Filesystem\n(project root)" as FS {
     artifact "data/raw/*.csv\ndata/processed/*.csv" as CSV_ART
-    artifact "PlantVillage\nImage Dataset" as PV_ART
-    artifact "disease_treatment\n_lookup.json" as TREAT_ART
+    artifact "PlantVillage Dataset\n(10 classes, ~18k images)" as PV_ART
+    artifact "disease_treatment\n_lookup.json (ICAR)" as TREAT_ART
     artifact "models/*.pkl\nmodels/*.pth" as MODEL_FILES
   }
 }
 
-' ========== USER BROWSER ==========
-node "User Browser\n(Chrome / Edge)" as BROWSER {
-  artifact "React SPA\n(HTML + JS + CSS)" as SPA
-  artifact "Chart.js\n(HistoryChart rendering)" as CHARTJS
-}
-
-' ========== PLANNED: FIELD ==========
-node "Field Installation\n(planned)" <<planned>> as FIELD #white;line.dashed {
-  node "ESP32 Sensor Node\nPer-plant" <<planned>> as ESP32_NODE #white;line.dashed {
-    artifact "Capacitive Soil\nMoisture Sensor" as SOIL_SENSOR #white;line.dashed
-    artifact "DHT22\n(Temp + Humidity)" as DHT22 #white;line.dashed
+' ═══════ ROW 3: PLANNED FIELD + CLOUD ═══════
+node "<<device>>\nField Installation (planned)" <<planned>> as FIELD #white;line.dashed {
+  node "<<embedded>>\nESP32 Sensor Node\n(per-plant, Wi-Fi)" <<planned>> as ESP32_NODE #white;line.dashed {
+    artifact "Soil Moisture\nSensor" as SOIL_SENSOR #white;line.dashed
+    artifact "DHT22 Sensor\n(Temp + Humidity)" as DHT22 #white;line.dashed
   }
-  artifact "Camera Module\n(leaf image capture)" as CAMERA
 }
 
-' ========== PLANNED: CLOUD ==========
-cloud "Cloud Services\n(planned)" <<planned>> as CLOUD #white;line.dashed {
-  database "Firebase RTDB\n(planned)" as FB #white;line.dashed
-  node "OpenWeatherMap\nAPI (planned)" as OWM #white;line.dashed
+artifact "Camera Module\n(leaf capture, planned)" as CAMERA #white;line.dashed
+
+cloud "<<cloud>>\nCloud Services (planned)" <<planned>> as CLOUD #white;line.dashed {
+  database "Firebase RTDB\n(NoSQL, planned)" as FB #white;line.dashed
+  node "OpenWeatherMap\nREST API (planned)" as OWM #white;line.dashed
 }
 
-' ========== CONNECTIONS ==========
-' Browser to frontend
-BROWSER -down-> VITE : HTTP GET\nlocalhost:5173
+' ═══════ CONNECTIONS ═══════
+' Browser to Vite (user interaction)
+BROWSER -down-> VITE : <<HTTP>>\nGET :5173
 
-' Frontend proxy to backend
-VITE -down-> FLASK_NODE : Vite proxy\n/api/* -> :5000
+' Vite proxy to Flask (API calls)
+VITE -down-> FLASK_NODE : <<HTTP proxy>>\n/api/* -> :5000\nJSON, multipart
 
 ' Backend reads filesystem
-FLASK_NODE -right-> FS : reads CSVs,\nmodel files,\ntreatments
+FLASK_NODE -right-> FS : <<filesystem>>\nreads artifacts
 
-' Planned connections
-ESP32_NODE .[#888888,dashed].> FB : push readings\n(Wi-Fi, planned)
-FB .[#888888,dashed].> FLASK_NODE : live sensor data\n(planned)
-OWM .[#888888,dashed].> FLASK_NODE : weather forecast\n(planned)
+' Planned: ESP32 to Firebase
+ESP32_NODE .[#888888,dashed].> FB : <<HTTPS>>\nWi-Fi push
 
-' Camera to frontend
-CAMERA .[#888888,dashed].> BROWSER : upload leaf\nimage (planned)
+' Planned: Firebase to Backend
+FB .[#888888,dashed].> FLASK_NODE : <<HTTPS>>\npolling
+
+' Planned: Weather API
+OWM .[#888888,dashed].> FLASK_NODE : <<HTTPS>>\nforecast
+
+' Planned: Camera upload
+CAMERA .[#888888,dashed].> BROWSER : <<USB>>\nimage upload
+
+' ═══════ FORCE LAYOUT ORDER ═══════
+BROWSER -[hidden]d- DEV
+DEV -[hidden]d- FIELD
+FIELD -[hidden]r- CLOUD
 
 @enduml

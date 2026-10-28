@@ -1,13 +1,12 @@
 @startuml system_architecture
 skinparam backgroundColor white
 skinparam defaultFontName "Segoe UI"
-skinparam defaultFontSize 12
+skinparam defaultFontSize 11
 skinparam shadowing false
 skinparam roundCorner 6
 skinparam packageStyle rectangle
-skinparam wrapWidth 200
-skinparam nodesep 20
-skinparam ranksep 30
+skinparam nodesep 12
+skinparam ranksep 20
 
 skinparam rectangle {
   BackgroundColor white
@@ -33,96 +32,101 @@ skinparam note {
   FontSize 10
 }
 
-title <b>Diagram 1 — System Architecture</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
+title <b>Diagram 1 -- System Architecture</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
 
 ' ═══════ LAYER 1: SENSING ═══════
-package "Layer 1 — Sensing" {
+package "Layer 1 -- Sensing" as L1 {
   rectangle "Camera Module\n(leaf image capture)" as CAM
-  rectangle "ESP32 Sensor Node\n(planned)" as ESP32 #FFFFFF;line.dashed
+  rectangle "ESP32 Sensor Node (planned)" as ESP32 #FFFFFF;line.dashed
 }
-note right of ESP32 : Capacitive soil moisture\n+ DHT22 (temp/humidity)\nOne node per plant
+note bottom of ESP32 : Capacitive soil moisture\n+ DHT22 (temp/humidity)\nOne node per plant
 
 ' ═══════ LAYER 2: DATA ═══════
-package "Layer 2 — Data" {
-  database "Simulated Sensor CSVs\ndata/raw/  ·  data/processed/" as CSV
-  database "PlantVillage\nImage Dataset" as PV
-  database "disease_treatment_lookup.json\n(ICAR-sourced, 10 classes)" as TREAT
-  database "Firebase RTDB\n(planned)" as FB #FFFFFF;line.dashed
-  rectangle "OpenWeatherMap API\n(planned)" as OWM #FFFFFF;line.dashed
+package "Layer 2 -- Data" as L2 {
   rectangle "simulate_sensor_data.py\nlabel_engineering.py" as SIM
+  database "Sensor CSVs\ndata/raw/\ndata/processed/" as CSV
+  database "PlantVillage\nImage Dataset" as PV
+  database "Treatments JSON\n(ICAR, 10 classes)" as TREAT
+  database "Firebase RTDB\n(planned)" as FB #FFFFFF;line.dashed
+  rectangle "OpenWeatherMap\n(planned)" as OWM #FFFFFF;line.dashed
 }
 
-' ═══════ LAYER 3: BACKEND ═══════
-package "Layer 3 — Backend ML & Explainability" {
-  together {
-    rectangle "**XGBoost**\nIrrigation classifier\nxgboost_irrigation.pkl" as XGB
-    rectangle "**Isolation Forest**\nAnomaly detector\n(bundled in pkl)" as ISO
-    rectangle "**SHAP** TreeExplainer\n(live, per-request)" as SHAP
-  }
-  together {
-    rectangle "**EfficientNetB0**\nDisease classifier\nefficientnet_finetuned.pth" as ENET
-    rectangle "**Grad-CAM**\ngradcam_inference.py\n(live, per-request)" as GCAM
-    rectangle "LIME\nlime_image_model.py\n(offline eval only)" as LIME #FFFFFF;line.dashed
-  }
-  rectangle "**Late Fusion Engine**\nmodels/fusion.py · FusionResult dataclass\nStatuses: HOLD | IRRIGATE | IRRIGATE_WITH_ALERT\nHOLD_WITH_ALERT | DISEASE_STRESS_WATCH\nSENSOR_ANOMALY | UNCERTAIN" as FUSION
+' ═══════ LAYER 3: BACKEND ML ═══════
+package "Layer 3 -- ML and Explainability" as L3 {
+  rectangle "**XGBoost**\nIrrigation classifier" as XGB
+  rectangle "**Isolation Forest**\nAnomaly detector" as ISO
+  rectangle "**SHAP**\nTreeExplainer" as SHAP
+  rectangle "**EfficientNetB0**\nDisease classifier" as ENET
+  rectangle "**Grad-CAM**\nImage explainer" as GCAM
+  rectangle "LIME (offline)" as LIME #FFFFFF;line.dashed
+  rectangle "**Late Fusion Engine**\nmodels/fusion.py\n7 status codes" as FUSION
 }
 
 ' ═══════ LAYER 4: API ═══════
-package "Layer 4 — REST API  (Flask + Waitress · backend/app.py)" {
-  rectangle "POST /api/predict/sensor" as R1
-  rectangle "POST /api/predict/full" as R2
-  rectangle "POST /api/classify/image" as R3
-  rectangle "GET /api/history/<plant_id>" as R4
-  rectangle "GET /api/comparison" as R5
-  rectangle "GET /api/classes\nGET /api/confusion_matrix\nGET /health" as R6
+package "Layer 4 -- REST API (Flask + Waitress)" as L4 {
+  rectangle "/predict/sensor" as R1
+  rectangle "/predict/full" as R2
+  rectangle "/classify/image" as R3
+  rectangle "/history/<id>" as R4
+  rectangle "/comparison" as R5
+  rectangle "/classes, /health" as R6
 }
 
 ' ═══════ LAYER 5: FRONTEND ═══════
-package "Layer 5 — Frontend  (React + Vite + Chart.js)" {
+package "Layer 5 -- Frontend (React + Vite)" as L5 {
   rectangle "**App.jsx**" as FAPP
-  rectangle "PlantCard.jsx" as FPC
-  rectangle "ExplainabilityPanel.jsx\n+ ShapBars.jsx" as FEP
-  rectangle "HistoryChart.jsx" as FHC
-  rectangle "WhatIfSimulator.jsx" as FWIS
-  rectangle "ABComparison.jsx" as FABC
+  rectangle "PlantCard" as FPC
+  rectangle "ExplainabilityPanel\n+ ShapBars" as FEP
+  rectangle "HistoryChart" as FHC
+  rectangle "WhatIfSimulator" as FWIS
+  rectangle "ABComparison" as FABC
 }
 
-' ═══════ VERTICAL CONNECTIONS ═══════
-ESP32 .[#888888,dashed].> FB : push readings\n(planned)
+' ═══════ FORCE STRICT TOP-DOWN ORDER ═══════
+L1 -[hidden]d- L2
+L2 -[hidden]d- L3
+L3 -[hidden]d- L4
+L4 -[hidden]d- L5
+
+' ═══════ L1 to L2 ═══════
+ESP32 .[#888888,dashed].> FB : push readings
 SIM --> CSV : generates
-CAM --> R2 : upload leaf image
-CAM --> R3 : classify only
 
-FB .[#888888,dashed].> R1 : live fetch\n(planned)
-CSV --> R4 : history data
-CSV --> R5 : A/B stats
-PV --> ENET : training images
+' ═══════ L2 to L3 ═══════
+PV --> ENET : training data
 TREAT --> FUSION : treatment lookup
-OWM .[#888888,dashed].> FUSION : weather context\n(planned)
+OWM .[#888888,dashed].> FUSION : weather
+CSV --> FUSION : sensor data
 
-R1 --> XGB : sensor values
-R1 --> ISO : anomaly check
-R1 --> SHAP : explain
-R2 --> ENET : leaf image
-R2 --> GCAM : explain image
-R2 --> FUSION : fuse results
-R3 --> ENET : classify
+' ═══════ L1 to L3 ═══════
+CAM --> ENET : leaf images
 
+' ═══════ L3 internal ═══════
 XGB --> FUSION
 ISO --> FUSION
 ENET --> FUSION
 
+' ═══════ L3 to L4 ═══════
+FUSION --> R2 : fused result
+SHAP --> R1 : SHAP values
+GCAM --> R2 : heatmap
+
+' ═══════ L2 to L4 ═══════
+CSV --> R4 : history
+CSV --> R5 : A/B stats
+FB .[#888888,dashed].> R1 : live fetch
+
+' ═══════ L4 to L5 ═══════
+R1 --> FAPP : HTTP/JSON
+R2 --> FAPP
+R4 --> FAPP
+R5 --> FAPP
+
+' ═══════ L5 internal ═══════
 FAPP --> FPC
 FAPP --> FWIS
 FAPP --> FABC
 FPC --> FEP
 FPC --> FHC
-
-FAPP --> R1 : HTTP/JSON
-FAPP --> R2
-FAPP --> R4
-FAPP --> R5
-FWIS --> R1
-FABC --> R5
 
 @enduml

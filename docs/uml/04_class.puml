@@ -1,163 +1,192 @@
-@startuml class_diagram
+@startuml ExplainableDigitalTwin  
 skinparam backgroundColor white
 skinparam defaultFontName "Segoe UI"
 skinparam defaultFontSize 12
-skinparam shadowing false
-skinparam roundCorner 6
-skinparam classAttributeIconSize 0
-
-skinparam class {
-  BackgroundColor white
-  BorderColor #444444
-  FontColor #222222
-  HeaderBackgroundColor #F0F0F0
-}
-
-skinparam package {
-  BackgroundColor #F7F7F7
-  BorderColor #444444
-  FontStyle bold
-}
-
-skinparam enum {
-  BackgroundColor white
-  BorderColor #444444
-  HeaderBackgroundColor #F0F0F0
-}
-
-title <b>Diagram 4 — Class Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
-
-' ═══════ FUSION MODULE (models/fusion.py) ═══════
-package "models/fusion.py" {
-
-  class FusionResult <<dataclass>> {
-    -- Core Decision --
-    + status : str
-    + irrigate : bool
-    -- Sensor Model Outputs --
-    + sensor_irrigation_needed : int
-    + sensor_probability : float
-    + sensor_anomaly : bool
-    + soil_moisture_pct : float
-    + temperature_c : float
-    + humidity_pct : float
-    -- Image Model Outputs --
-    + disease_class : Optional[str]
-    + disease_confidence : float
-    + disease_low_confidence : bool
-    + known_confusable_pair : bool
-    + top2_gap : Optional[float]
-    + disease_stress_watch : bool
-    -- Treatment & Explanation --
-    + treatment : dict
-    + sensor_explanation : dict
-    + image_explanation : dict
-    + alerts : list[str]
-  }
-
-  enum FusionStatus <<enumeration>> {
-    HOLD
-    IRRIGATE
-    IRRIGATE_WITH_ALERT
-    HOLD_WITH_ALERT
-    DISEASE_STRESS_WATCH
-    SENSOR_ANOMALY
-    UNCERTAIN
-  }
-
-  class FusionEngine <<module>> {
-    - IMAGE_CONF_THRESHOLD : float = 0.70
-    - CONFUSABLE_GAP_MARGIN : float = 0.35
-    - SENSOR_IRRIG_THRESHOLD : float = 0.50
-    - STRESS_ASSOCIATED_DISEASES : set
-    - CONFUSABLE_PAIR : frozenset
-    --
-    + fuse(soil_moisture, temp, humidity, image_probs) : FusionResult
-    + run_sensor_model(moisture, temp, humidity) : tuple
-    + analyze_image_probs(image_probs) : tuple
-    - _get_bundle() : dict
-    - _get_treatment(disease_class) : dict
-  }
-
-  FusionEngine ..> FusionResult : creates
-  FusionResult --> FusionStatus : status uses
-}
-
-' ═══════ BACKEND (backend/app.py) ═══════
-package "backend/app.py" {
-
-  class FlaskApp <<controller>> {
-    - _shap_explainer : TreeExplainer
-    - _history_cache : dict
-    --
-    + health() : JSON
-    + get_classes() : JSON
-    + get_confusion_matrix() : JSON
-    + predict_sensor() : JSON
-    + predict_full() : JSON
-    + classify_image() : JSON
-    + get_history(plant_id) : JSON
-    + get_comparison() : JSON
-    --
-    - _compute_shap(moisture, temp, humidity) : dict
-    - _parse_sensor_fields(source) : tuple
-    - _load_history(plant_id) : list
-    - _compute_comparison(plant_id) : dict
-  }
-}
-
-' ═══════ IMAGE INFERENCE (backend/image_inference.py) ═══════
-package "backend/image_inference.py" {
-
-  class ImageClassifier <<module>> {
-    - _model : EfficientNetB0
-    - _meta : dict
-    - _transform : Compose
-    --
-    + predict(pil_image) : dict
-    + get_class_names() : list
-    - _load() : tuple
-  }
-}
-
-' ═══════ GRAD-CAM (backend/gradcam_inference.py) ═══════
-package "backend/gradcam_inference.py" {
-
-  class GradCAMExplainer <<module>> {
-    --
-    + explain(pil_image, target_class) : dict
-    - _get_model_and_meta() : tuple
-  }
-}
-
-' ═══════ SENSOR MODEL (models/train_sensor_model.py) ═══════
-package "Model Artifacts" {
-
-  class XGBClassifier <<sklearn>> {
-    + predict(X) : ndarray
-    + predict_proba(X) : ndarray
-  }
-
-  class IsolationForest <<sklearn>> {
-    + predict(X) : ndarray
-    + decision_function(X) : ndarray
-  }
-
-  class TreeExplainer <<shap>> {
-    + shap_values(X) : ndarray
-  }
-}
-
-' ═══════ RELATIONSHIPS ═══════
-FlaskApp --> FusionEngine : fuse()
-FlaskApp --> ImageClassifier : predict()
-FlaskApp --> GradCAMExplainer : explain()
-FlaskApp --> TreeExplainer : shap_values()
-
-FusionEngine --> XGBClassifier : predict()\npredict_proba()
-FusionEngine --> IsolationForest : predict()
-
-ImageClassifier ..> XGBClassifier : shares\nmodel artifacts
-GradCAMExplainer ..> ImageClassifier : reuses\nEfficientNetB0
-
+title <b>Diagram 4 -- Class Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation  
+  
+skinparam classAttributeIconSize 0  
+skinparam linetype ortho  
+skinparam nodesep 25  
+skinparam ranksep 30  
+left to right direction  
+  
+' ===================== FRONTEND =====================  
+package "Frontend (React)" {  
+    class DashboardClient {  
+        + fetchClasses() : Promise<string[]>  
+        + fetchConfusionMatrix() : Promise<ConfusionMatrix>  
+        + predictSensor(reading : SensorReading) : Promise<FusionResultJSON>  
+        + predictFull(reading : SensorReading, image : File) : Promise<FusionResultJSON>  
+        + fetchHistory(plantId : string, last : int) : Promise<HistoryDTO>  
+        + fetchComparison() : Promise<ComparisonDTO>  
+    }  
+}  
+  
+' ===================== API LAYER =====================  
+package "Backend API (Flask)" {  
+    class FlaskApp <<singleton>> {  
+        - _shap_explainer : TreeExplainer  
+        - _history_cache : dict<str, list>  
+        + health() : Response                ' GET /health  
+        + get_classes() : Response           ' GET /api/classes  
+        + get_confusion_matrix() : Response  ' GET /api/confusion_matrix  
+        + predict_sensor() : Response        ' POST /api/predict/sensor  
+        + predict_full() : Response          ' POST /api/predict/full  
+        + classify_image() : Response        ' POST /api/classify/image  
+        + get_history(plant_id : str) : Response  ' GET /api/history/<plant_id>  
+        + get_comparison() : Response        ' GET /api/comparison  
+        - _parse_sensor_fields(source) : (float, float, float)  
+        - _compute_shap(moisture : float, temp : float, hum : float) : dict  
+        - _get_shap_explainer() : TreeExplainer  
+        - _load_history(plant_id : str) : list  
+        - _compute_comparison(plant_id : str) : dict  
+        - _to_native(obj) : object  
+        - _prewarm() : void  
+    }  
+  
+    class SensorReadingValidator {  
+        + validate(soil_moisture_pct : float, temperature_c : float, humidity_pct : float) : tuple  
+        ' ranges: moisture 0-100, temp -10..60, humidity 0-100  
+    }  
+}  
+  
+' ===================== FUSION LAYER =====================  
+package "Decision Fusion (models/fusion.py)" {  
+    class FusionEngine {  
+        - _bundle : dict  ' lazy-loaded: xgb_model, iso_forest, feature_cols, treatments  
+        - IMAGE_CONF_THRESHOLD : float = 0.70  
+        - CONFUSABLE_GAP_MARGIN : float = 0.35  
+        - SENSOR_IRRIG_THRESHOLD : float = 0.50  
+        - STRESS_ASSOCIATED_DISEASES : set  
+        - CONFUSABLE_PAIR : frozenset  
+        + fuse(soil_moisture_pct : float, temperature_c : float,  
+               humidity_pct : float, image_probs : dict | None,  
+               sensor_shap_values : dict, image_lime_mask : dict | None) : FusionResult  
+        + run_sensor_model(moisture : float, temp : float, humidity : float) : tuple  
+        + analyze_image_probs(image_probs : dict | None) : tuple  
+        - _get_bundle() : dict  
+        - _get_treatment(disease_class : str) : dict  
+    }  
+  
+    class FusionResult <<dataclass>> {  
+        + status : str                    ' HOLD | IRRIGATE | SENSOR_ANOMALY | ...  
+        + irrigate : bool  
+        + sensor_irrigation_needed : int  
+        + sensor_probability : float  
+        + sensor_anomaly : bool  
+        + soil_moisture_pct : float  
+        + temperature_c : float  
+        + humidity_pct : float  
+        + disease_class : str | None  
+        + disease_confidence : float  
+        + disease_low_confidence : bool   ' true if < 0.70  
+        + known_confusable_pair : bool    ' Target_Spot vs Spider_mites gap < 0.35  
+        + top2_gap : float | None  
+        + disease_stress_watch : bool  
+        + treatment : dict  
+        + sensor_explanation : dict       ' SHAP per feature  
+        + image_explanation : dict        ' Grad-CAM payload  
+        + alerts : list<str>  
+    }  
+  
+    class Treatment <<entity>> {  
+        + display_name : str  
+        + pathogen : str | None  
+        + severity : str        ' none | moderate | high  
+        + urgency : str         ' none | act_within_24h | 48h | 72h  
+        + description : str  
+        + immediate_actions : list<str>  
+        + chemical_treatments : list<ChemicalTreatment>  
+        + biological_treatments : list  
+        + irrigation_note : str  
+        + water_stress_link : str  
+        + icar_source : str | None  
+    }  
+  
+    class ChemicalTreatment {  
+        + product : str  
+        + dose : str  
+        + frequency : str  
+        + icar_ref : str  
+    }  
+}  
+  
+' ===================== MODEL LAYER =====================  
+package "ML Models" {  
+    class SensorModelBundle <<singleton>> {  
+        + xgb_model : XGBClassifier        ' P(irrigation_needed)  
+        + iso_forest : IsolationForest     ' anomaly detection  
+        + feature_cols : list<str>  
+    }  
+  
+    class ImageInferenceEngine <<module singleton>> {  
+        - _model : EfficientNetB0          ' shared with Grad-CAM  
+        - _load() : void                   ' lazy weight load  
+        + predict(pil_image : Image) : dict<str, float>  ' 10-class softmax probs  
+        + get_class_names() : list<str>  
+    }  
+  
+    class GradCAMExplainer <<module>> {  
+        + explain(pil_image : Image, overlay_alpha : float) : dict  
+        - _get_model_and_meta() : tuple  
+        ' -> {method, predicted_class, confidence, heatmap_b64, target_layer, note}  
+    }  
+  
+    class SHAPExplainer <<wrapper>> {  
+        + shap_values(X : ndarray) : ndarray   ' TreeExplainer on xgb_model  
+    }  
+}  
+  
+' ===================== DATA LAYER =====================  
+package "Data / Artifacts" {  
+    class HistoryRepository {  
+        - csv_path : str   ' data/processed/{plant_id}_labeled.csv  
+        + load(plant_id : str) : list<SensorRecord>  
+    }  
+    class SensorRecord {  
+        + timestamp : str  
+        + soil_moisture_pct : float  
+        + temperature_c : float  
+        + humidity_pct : float  
+        + watered : int  
+    }  
+    class ConfusionMatrixStore {  
+        + class_names : list<str>   ' 10 tomato classes  
+        + matrix : int[][]  
+        + per_class : dict  
+        + overall_accuracy : float  
+    }  
+}  
+  
+' ===================== RELATIONSHIPS =====================  
+DashboardClient ..> FlaskApp : REST/JSON >  
+  
+FlaskApp ..> SensorReadingValidator : validates >  
+FlaskApp --> FusionEngine : fuse() >  
+FlaskApp --> ImageInferenceEngine : predict() >  
+FlaskApp --> GradCAMExplainer : explain() >  
+FlaskApp --> SHAPExplainer : shap_values() >  
+FlaskApp --> HistoryRepository : load() >  
+FlaskApp --> ConfusionMatrixStore : reads >  
+  
+FusionEngine ..> FusionResult : creates >  
+FusionEngine --> SensorModelBundle : _get_bundle() >  
+FusionResult *-- Treatment : contains >  
+Treatment *-- ChemicalTreatment : 0..* >  
+  
+SHAPExplainer --> SensorModelBundle : wraps\nxgb_model >  
+GradCAMExplainer --> ImageInferenceEngine : reuses\nmodel >  
+HistoryRepository o-- SensorRecord : 0..* >  
+  
+note right of FusionEngine  
+  Rule-based fusion: combines XGBoost sensor  
+  prediction + IsolationForest anomaly flag +  
+  EfficientNetB0 disease probs into a single  
+  status + treatment recommendation.  
+end note  
+  
+note right of GradCAMExplainer  
+  Chosen over LIME: ~53ms single backward pass  
+  vs LIME-1000 = 15.86s per request.  
+end note  
 @enduml

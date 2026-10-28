@@ -5,8 +5,8 @@ skinparam defaultFontSize 12
 skinparam shadowing false
 skinparam roundCorner 6
 skinparam packageStyle rectangle
-skinparam nodesep 20
-skinparam ranksep 30
+skinparam nodesep 15
+skinparam ranksep 25
 
 skinparam component {
   BackgroundColor white
@@ -25,10 +25,13 @@ skinparam database {
   BorderColor #444444
 }
 
-title <b>Diagram 3 — Component Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
+title <b>Diagram 3 -- Component Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
 
-' ═══════ FRONTEND ═══════
-package "Frontend  (React + Vite + Chart.js)" {
+' ═══════ TOP ROW: Main components left to right ═══════
+
+component [ESP32 Sensor Node\n(planned)] as ESP32 #white;line.dashed
+
+package "Frontend (React + Vite + Chart.js)" as PKG_FE {
   component [App.jsx] as APP
   component [PlantCard.jsx] as PC
   component [ExplainabilityPanel.jsx\n+ ShapBars.jsx] as EP
@@ -44,23 +47,17 @@ package "Frontend  (React + Vite + Chart.js)" {
   PC --> HC
 }
 
-' ═══════ API INTERFACE ═══════
 interface "REST API\n(8 endpoints)" as I_API
 
-APIJS ..> I_API : HTTP / JSON
-
-' ═══════ BACKEND ═══════
-package "Backend  (Flask + Waitress)" {
+package "Backend (Flask + Waitress)" as PKG_BACK {
   component [app.py\nREST Controller] as APPPY
-  APPPY -up- I_API
 }
 
-' ═══════ ML & EXPLAINABILITY ═══════
-package "ML & Explainability" {
+package "ML and Explainability" as PKG_ML {
   component [XGBoost\nIrrigation Classifier] as XGB
   component [Isolation Forest\nAnomaly Detector] as ISO
-  component [SHAP TreeExplainer] as SHAP
   component [EfficientNetB0\nDisease Classifier] as ENET
+  component [SHAP TreeExplainer] as SHAP
   component [Grad-CAM] as GCAM
   component [LIME (offline only)] as LIME #white;line.dashed
   component [Late Fusion Engine\nmodels/fusion.py] as FUSION
@@ -70,6 +67,16 @@ package "ML & Explainability" {
   ENET --> FUSION
 }
 
+' ═══════ FORCE TOP ROW: side by side ═══════
+PKG_FE -[hidden]r- I_API
+I_API -[hidden]r- PKG_BACK
+PKG_BACK -[hidden]r- PKG_ML
+
+' ═══════ INTERFACE CONNECTIONS ═══════
+APIJS ..> I_API : HTTP / JSON
+APPPY -- I_API
+
+' ═══════ BACKEND to ML ═══════
 APPPY --> XGB
 APPPY --> ISO
 APPPY --> SHAP
@@ -77,26 +84,22 @@ APPPY --> ENET
 APPPY --> GCAM
 APPPY --> FUSION
 
-' ═══════ DATA & STORAGE ═══════
-package "Data & Storage" {
-  database [Sensor CSVs\ndata/raw/ · data/processed/] as CSV
-  database [PlantVillage\nImage Dataset] as PV
-  database [disease_treatment_lookup.json] as TREAT
-  database [Model Artifacts\n.pkl · .pth] as MODELS
-  database [Firebase RTDB\n(planned)] as FB #white;line.dashed
-}
-
-APPPY ..> CSV
-FUSION ..> TREAT
-MODELS ..> XGB
-MODELS ..> ENET
-
-' ═══════ PLANNED ═══════
-component [ESP32 Sensor Node\n(planned)] as ESP32 #white;line.dashed
+' ═══════ BOTTOM ROW: Data stores ═══════
+database [Sensor CSVs\ndata/raw/\ndata/processed/] as CSV
+database [PlantVillage\nImage Dataset] as PV
+database [disease_treatment\n_lookup.json] as TREAT
+database [Model Artifacts\n.pkl  .pth] as MODELS
+database [Firebase RTDB\n(planned)] as FB #white;line.dashed
 component [OpenWeatherMap API\n(planned)] as OWM #white;line.dashed
 
+' ═══════ DATA CONNECTIONS ═══════
+CSV ..> APPPY
+MODELS ..> XGB
+MODELS ..> ENET
+PV ..> ENET
+TREAT ..> FUSION
+OWM .[#888888,dashed].> FUSION
 ESP32 .[#888888,dashed].> FB
 FB .[#888888,dashed].> APPPY
-OWM .[#888888,dashed].> FUSION
 
 @enduml
