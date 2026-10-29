@@ -23,64 +23,55 @@ skinparam rectangle {
   FontStyle bold
 }
 
-skinparam note {
-  BackgroundColor #FFFFEE
-  BorderColor #AAAAAA
-  FontSize 10
-}
+title <b>Use Case Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
 
-title <b>Diagram 2 -- Use Case Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
+left to right direction
 
-' -- Actors --
+' -- Actors on Left --
 actor "Farmer /\nDomain Expert" as FARMER
 actor "ESP32 Sensor\nNode (planned)" as ESP32 #white;line.dashed
 
-' -- System boundary --
+' -- System boundary in Middle --
 rectangle "Explainable Digital Twin for Data-Driven Irrigation Management" as SYS {
 
-  ' -- Dashboard (central use case) --
-  usecase "Access Dashboard" as DASHBOARD
+  together {
+    usecase "Get Comprehensive\nHealth Prediction" as UC_FULL
+    usecase "Access Dashboard" as DASHBOARD
+    usecase "Run What-If Simulation" as UC_WHATIF
+    usecase "View Historical Trends" as UC_HISTORY
+    usecase "Push Live Sensor\nData (planned)" as UC_PUSH #white;line.dashed
+  }
+
+  together {
+    usecase "View Live Plant Status" as UC_VIEW
+    usecase "Compare Plant Data" as UC_COMPARE
+    usecase "Diagnose Plant Disease" as UC_DIAGNOSE
+  }
+
+  together {
+    usecase "View AI Explanation" as UC_EXPLAIN
+    usecase "View Treatment\nRecommendation" as UC_TREAT
+  }
 
   ' -- Dashboard includes these three --
-  usecase "View Live Plant Status" as UC_VIEW
-  usecase "Compare Plant Data" as UC_COMPARE
-  usecase "Diagnose Plant Disease" as UC_DIAGNOSE
+  DASHBOARD ..> UC_VIEW : <<include>>
+  DASHBOARD ..> UC_COMPARE : <<include>>
+  DASHBOARD ..> UC_DIAGNOSE : <<include>>
 
-  ' -- Other farmer use cases --
-  usecase "View Historical Trends" as UC_HISTORY
-  usecase "Run What-If Simulation" as UC_WHATIF
-  usecase "Get Comprehensive\nHealth Prediction" as UC_FULL
-
-  ' -- Explainability --
-  usecase "View AI Explanation" as UC_EXPLAIN
-
-  ' -- Treatment --
-  usecase "View Treatment\nRecommendation" as UC_TREAT
-
-  ' -- Planned --
-  usecase "Push Live Sensor\nData (planned)" as UC_PUSH #white;line.dashed
+  ' -- Include/extend relationships --
+  UC_FULL ..> UC_EXPLAIN : <<include>>
+  UC_VIEW ..> UC_EXPLAIN : <<include>>
+  UC_WHATIF ..> UC_VIEW : <<include>>
+  UC_DIAGNOSE ..> UC_TREAT : <<extend>>\nif disease detected
 }
 
 ' -- Farmer interactions --
-FARMER --> DASHBOARD
-FARMER --> UC_HISTORY
-FARMER --> UC_WHATIF
 FARMER --> UC_FULL
+FARMER --> DASHBOARD
+FARMER --> UC_WHATIF
+FARMER --> UC_HISTORY
 
-' -- Dashboard includes --
-DASHBOARD ..> UC_VIEW : <<include>>
-DASHBOARD ..> UC_COMPARE : <<include>>
-DASHBOARD ..> UC_DIAGNOSE : <<include>>
-
-' -- Include/extend relationships --
-UC_FULL ..> UC_EXPLAIN : <<include>>
-UC_VIEW ..> UC_EXPLAIN : <<include>>
-
-UC_WHATIF ..> UC_VIEW : <<include>>
-
-UC_DIAGNOSE ..> UC_TREAT : <<extend>>\nif disease detected
-
-' -- Planned --
+' -- Sensor interaction at bottom --
 ESP32 .[#888888,dashed].> UC_PUSH
 
 @enduml

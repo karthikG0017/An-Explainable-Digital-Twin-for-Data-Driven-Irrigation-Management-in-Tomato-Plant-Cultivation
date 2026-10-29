@@ -32,7 +32,7 @@ skinparam note {
   FontSize 10
 }
 
-title <b>Diagram 1 -- System Architecture</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
+title <b>System Architecture</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
 
 ' ═══════ LAYER 1: SENSING ═══════
 package "Layer 1 -- Sensing" as L1 {

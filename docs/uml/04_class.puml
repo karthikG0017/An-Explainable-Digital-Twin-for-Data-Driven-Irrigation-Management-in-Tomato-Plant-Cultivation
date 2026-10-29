@@ -2,7 +2,7 @@
 skinparam backgroundColor white
 skinparam defaultFontName "Segoe UI"
 skinparam defaultFontSize 12
-title <b>Diagram 4 -- Class Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation  
+title <b>Class Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation  
   
 skinparam classAttributeIconSize 0  
 skinparam linetype ortho  

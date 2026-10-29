@@ -19,7 +19,7 @@ skinparam partition {
   FontStyle bold
 }
 
-title <b>Diagram 6 -- Activity Diagram</b>\nFusion Decision Workflow (models/fusion.py)
+title <b>Activity Diagram</b>\nFusion Decision Workflow (models/fusion.py)
 
 start
 

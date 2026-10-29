@@ -25,7 +25,7 @@ skinparam database {
   BorderColor #444444
 }
 
-title <b>Diagram 3 -- Component Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
+title <b>Component Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
 
 ' ═══════ TOP ROW: Main components left to right ═══════
 

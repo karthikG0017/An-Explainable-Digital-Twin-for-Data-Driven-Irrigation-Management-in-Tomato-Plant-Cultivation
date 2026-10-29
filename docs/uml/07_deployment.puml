@@ -34,7 +34,7 @@ skinparam note {
   FontSize 10
 }
 
-title <b>Diagram 7 -- Deployment Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
+title <b>Deployment Diagram</b>\nExplainable Digital Twin for Data-Driven Irrigation Management in Tomato Cultivation
 
 ' ═══════ ROW 1: USER BROWSER ═══════
 node "<<client device>>\nUser Browser\n(Chrome / Edge)" as BROWSER {

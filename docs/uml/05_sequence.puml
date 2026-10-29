@@ -17,7 +17,7 @@ skinparam note {
   FontSize 10
 }
 
-title <b>Diagram 5 — Sequence Diagram</b>\nFull Prediction Flow (POST /api/predict/full)
+title <b>Sequence Diagram</b>\nFull Prediction Flow (POST /api/predict/full)
 
 actor "Farmer" as USER
 participant "App.jsx\n(React)" as FE
